@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP FRS-R · Enterprise Accuracy Framework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#f4f6fa;--bg2:#fff;--bg3:#f0f2f7;--bg4:#e6e9f0;
+  --border:#dde1ec;--border2:#c8cdd8;
+  --text:#1a1d2e;--text2:#4a5068;--text3:#8890a8;
+  --c0:#0077aa;--c1:#1a6fd4;--red:#c41e3a;--amber:#c47a00;--green:#2a7d3f;
+  --mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif;--display:'Syne',sans-serif;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 16px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.7}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:252px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+.sb-logo{padding:22px 18px 16px;border-bottom:1px solid var(--border)}
+.sb-logo .tag{font-family:var(--mono);font-size:9px;color:var(--c0);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.sb-logo h1{font-family:var(--display);font-size:14px;font-weight:700;line-height:1.3}
+.sb-nav{padding:10px 0;flex:1}
+.nav-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--text3);text-transform:uppercase;padding:10px 18px 4px}
+.nav-a{display:flex;align-items:center;gap:8px;padding:6px 18px;color:var(--text2);text-decoration:none;font-size:12px;border-left:2px solid transparent;transition:all .15s;cursor:pointer}
+.nav-a:hover{color:var(--text);background:var(--bg3)}
+.nav-a.active{color:var(--c1);border-left-color:var(--c1);background:#e8f0fc}
+.ndot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block}
+.sb-foot{padding:12px 18px;border-top:1px solid var(--border);font-family:var(--mono);font-size:9px;color:var(--text3)}
+.main{margin-left:252px;flex:1;padding:0 44px 80px;max-width:calc(100% - 252px)}
+.hero{padding:48px 0 36px;border-bottom:1px solid var(--border);margin-bottom:44px}
+.hero-eye{font-family:var(--mono);font-size:10px;color:var(--c0);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+.hero h2{font-family:var(--display);font-size:34px;font-weight:800;line-height:1.1;margin-bottom:14px;max-width:660px}
+.hero h2 span{color:var(--c0)}
+.hero-sub{font-size:13px;color:var(--text2);max-width:560px;line-height:1.8;margin-bottom:20px}
+.hero-meta{display:flex;gap:18px;flex-wrap:wrap}
+.hero-mi{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.section{margin-bottom:52px;scroll-margin-top:28px}
+.sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.sec-num{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:22px}
+.section h3{font-family:var(--display);font-size:19px;font-weight:700}
+.sec-line{flex:1;height:1px;background:var(--border);margin-left:4px}
+.prose{color:var(--text2);font-size:13px;line-height:1.8;max-width:760px;margin-bottom:18px}
+.prose strong{color:var(--text);font-weight:500}
+.callout{border:1px solid var(--border2);border-left:3px solid var(--c0);background:var(--bg2);border-radius:0 8px 8px 0;padding:11px 15px;margin:14px 0;font-size:12px;color:var(--text2);box-shadow:var(--sh)}
+.callout.warn{border-left-color:var(--red)} .callout.info{border-left-color:var(--c1)}
+.callout strong{color:var(--text)}
+.fbox{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:18px 22px;margin:18px 0;font-family:var(--mono);box-shadow:var(--sh)}
+.fbox-lbl{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.fbox-main{font-size:13px;color:var(--c0);font-weight:500;margin-bottom:6px;line-height:2}
+.fbox-note{font-size:10px;color:var(--text3);margin-top:6px;line-height:1.7}
+.fbox-rule{font-size:11px;color:var(--red);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+/* SAVE/LOAD BAR */
+.save-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fffbe6;border:1px solid #f5d080;border-radius:8px;margin-bottom:18px;flex-wrap:wrap}
+.save-bar span{font-size:12px;color:var(--amber);font-family:var(--mono);flex:1}
+.sb-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-family:var(--mono);font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.sb-btn.save{background:var(--green);color:#fff}
+.sb-btn.save:hover{background:#1e6030}
+.sb-btn.load{background:var(--c1);color:#fff}
+.sb-btn.load:hover{background:#145ab0}
+.sb-btn.reset{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.sb-btn.reset:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.save-status{font-family:var(--mono);font-size:10px;color:var(--green)}
+/* CATEGORY CONFIG */
+.cat-config{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.cat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--sh)}
+.cat-card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cat-card h4{font-family:var(--display);font-size:13px;font-weight:700}
+.cat-field{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.cat-field label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.cat-field input{border:1px solid var(--border2);border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:12px;background:var(--bg3);color:var(--text);width:100%}
+.cat-field input:focus{outline:none;border-color:var(--c1)}
+/* LIVE PANEL */
+.live-panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin:22px 0;box-shadow:var(--sh2)}
+.lp-title{font-family:var(--display);font-size:15px;font-weight:700;margin-bottom:3px}
+.lp-sub{font-size:11px;color:var(--text3);margin-bottom:18px;font-family:var(--mono)}
+.lp-top{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap;margin-bottom:18px}
+.lp-score-big{font-family:var(--display);font-size:62px;font-weight:800;line-height:1}
+.lp-status{display:inline-block;padding:4px 13px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:.04em;margin-top:6px}
+.lp-grid{display:flex;gap:8px;flex-wrap:wrap;flex:1;min-width:260px}
+.lp-chip{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;text-align:center;min-width:76px;flex:1}
+.lp-chip-id{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:2px}
+.lp-chip-score{font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:1px}
+.lp-chip-w{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.lp-formula{font-family:var(--mono);font-size:11px;background:var(--bg3);padding:10px 13px;border-radius:7px;border:1px solid var(--border);line-height:2;color:var(--text2)}
+/* CONTEXT FILTER */
+.context-panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin:22px 0;box-shadow:var(--sh2)}
+.context-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:14px;margin-bottom:16px}
+.context-field{display:flex;flex-direction:column;gap:5px}
+.context-field label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.context-field select{border:1px solid var(--border2);border-radius:7px;background:var(--bg2);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 10px}
+.context-field select:focus{outline:none;border-color:var(--c1)}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin-top:14px}
+.summary-card{border:1px solid var(--border);border-radius:10px;background:var(--bg3);padding:12px;box-shadow:var(--sh)}
+.summary-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.summary-value{font-family:var(--display);font-size:24px;font-weight:800;line-height:1}
+.summary-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px}
+.phase-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:10px;margin-top:14px}
+.phase-card{border:1px solid var(--border);border-radius:10px;background:var(--bg2);padding:11px;box-shadow:var(--sh)}
+.phase-card-title{font-family:var(--display);font-size:12px;font-weight:700;margin-bottom:2px}
+.phase-card-meta{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px}
+.sev-line{display:flex;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:10px}
+.sev-pill{display:inline-flex;align-items:center;gap:4px;border-radius:4px;padding:2px 6px;background:var(--bg3);border:1px solid var(--border)}
+.md-preview{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);overflow:hidden}
+.md-preview summary{cursor:pointer;padding:10px 12px;font-family:var(--mono);font-size:10px;color:var(--c0);text-transform:uppercase;letter-spacing:.08em}
+.md-preview pre{max-height:280px;overflow:auto;padding:12px;background:var(--bg2);border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;white-space:pre-wrap;color:var(--text2)}
+.master-registry-panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 22px;box-shadow:var(--sh2)}
+.registry-phase{border:1px solid var(--border);border-radius:10px;margin:10px 0;background:var(--bg2);overflow:hidden}
+.registry-phase summary{cursor:pointer;padding:10px 12px;background:var(--bg3);font-family:var(--display);font-size:12px;font-weight:700}
+.registry-list{max-height:340px;overflow:auto}
+.registry-row{display:grid;grid-template-columns:160px 80px 1fr;gap:10px;padding:8px 12px;border-top:1px solid var(--border);font-size:11px}
+.registry-cat{font-family:var(--mono);color:var(--text3)}
+.registry-sev{font-family:var(--mono);font-weight:700;text-transform:uppercase}
+.registry-sev.critical{color:var(--red)}.registry-sev.major{color:var(--amber)}.registry-sev.minor{color:var(--green)}
+/* WEIGHT PANEL */
+.wt-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin:20px 0;box-shadow:var(--sh)}
+.wt-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.wt-row:last-child{border-bottom:none}
+.wt-id{font-family:var(--mono);font-size:11px;min-width:44px}
+.wt-name{flex:1;font-size:12px;font-weight:500}
+.wt-bar-wrap{flex:2}
+input[type=range]{width:100%;height:7px;border-radius:4px;outline:none;border:none;cursor:pointer;appearance:none;-webkit-appearance:none;background:var(--bg4)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:pointer}
+.num-in{width:54px;border:1px solid var(--border2);border-radius:5px;padding:4px 7px;font-family:var(--mono);font-size:11px;color:var(--text);text-align:center;background:var(--bg2)}
+.num-in:focus{outline:none;border-color:var(--c1)}
+.wt-ls{font-family:var(--mono);font-size:12px;font-weight:600;min-width:46px;text-align:right}
+.wsum-bar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 13px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);font-size:12px}
+.wsum-val{font-family:var(--mono);font-size:14px;font-weight:700}
+/* LAYER CARD */
+.layer-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin:18px 0;box-shadow:var(--sh);overflow:visible}
+.layer-card-hdr{display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);background:var(--bg2);border-radius:12px 12px 0 0;transition:background .15s}
+.layer-card-hdr:hover{background:var(--bg3)}
+.layer-pill{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 9px;border-radius:5px;flex-shrink:0}
+.layer-title-blk{flex:1}
+.layer-title{font-family:var(--display);font-size:14px;font-weight:700}
+.layer-abbr{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.layer-score-badge{font-family:var(--display);font-size:20px;font-weight:700;min-width:52px;text-align:right}
+.layer-counts{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right}
+.collapse-btn{font-size:14px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:transform .2s;flex-shrink:0}
+.collapse-btn.open{transform:rotate(180deg)}
+.layer-body{display:none}
+.layer-body.open{display:block}
+.layer-frm{padding:9px 18px;background:var(--bg3);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--c0)}
+.layer-ss{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.lss-sc{font-family:var(--display);font-size:28px;font-weight:800}
+.lss-info{flex:1;font-size:10px;color:var(--text3);font-family:var(--mono)}
+/* LAYER CONFIG STRIP */
+.lyr-cfg{display:flex;gap:10px;padding:10px 18px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:flex-end}
+.lyr-cfg-block{display:flex;flex-direction:column;gap:3px}
+.lyr-cfg-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.lyr-cfg-input{border:1px solid var(--border2);border-radius:5px;padding:4px 8px;font-family:var(--mono);font-size:11px;background:var(--bg3);color:var(--text);width:70px}
+.lyr-cfg-input:focus{outline:none;border-color:var(--c1)}
+/* PASS/FAIL SUMMARY ROW */
+.pf-row{display:flex;gap:8px;padding:8px 18px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.pf-chip{display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-family:var(--mono)}
+.pf-dot{width:8px;height:8px;border-radius:50%}
+/* CHECKLIST */
+.cl-container{background:var(--bg2)}
+.cl-group-hdr{padding:7px 18px;background:var(--bg3);font-size:10px;font-weight:600;color:var(--text2);font-family:var(--mono);border-bottom:1px solid var(--border);border-top:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.cl-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);transition:background .1s}
+.cl-row:last-child{border-bottom:none}
+.cl-row:hover{background:#fafbfd}
+.cl-num{font-family:var(--mono);font-size:9px;color:var(--text3);padding:12px 10px;min-width:36px;flex-shrink:0;border-right:1px solid var(--border)}
+.cl-main{flex:1;padding:10px 10px}
+.cl-item-in{font-size:12px;font-weight:500;color:var(--text);border:none;background:transparent;width:100%;font-family:var(--sans);padding:0;line-height:1.5}
+.cl-item-in:focus{outline:none;border-bottom:1px dotted var(--c1)}
+.cl-src-in{font-family:var(--mono);font-size:9px;color:var(--text3);border:none;background:transparent;width:100%;padding-top:3px}
+.cl-src-in:focus{outline:none;border-bottom:1px dotted var(--border2)}
+/* CHECKLIST CONTROLS */
+.cl-ctrl{padding:8px 12px;display:flex;flex-direction:column;gap:5px;align-items:flex-end;min-width:260px;flex-shrink:0;border-left:1px solid var(--border)}
+.cl-ctrl-row{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3)}
+.cl-sel{border:1px solid var(--border2);border-radius:5px;padding:3px 7px;font-family:var(--mono);font-size:10px;background:var(--bg2);color:var(--text);cursor:pointer}
+.cl-sel:focus{outline:none;border-color:var(--c1)}
+.cl-status-sel{border:1px solid var(--border2);border-radius:5px;padding:3px 7px;font-family:var(--mono);font-size:10px;background:var(--bg2);color:var(--text);cursor:pointer;width:90px}
+.cl-status-sel:focus{outline:none;border-color:var(--c1)}
+.cl-score-tag{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.cl-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;align-self:flex-start}
+.cl-rm:hover{color:var(--red);background:#fce8e8}
+.sap-tag{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;background:#e8f4e8;color:#2a7d3f;border:1px solid #a8d5a8}
+/* ADD BUTTONS */
+.add-cl-row{padding:9px 18px;background:var(--bg3);border-top:1px dashed var(--border2);display:flex;gap:8px;flex-wrap:wrap}
+.add-cl-btn{padding:5px 12px;border:1px dashed var(--border2);border-radius:6px;background:none;color:var(--text3);font-size:10px;cursor:pointer;font-family:var(--mono)}
+.add-cl-btn:hover{color:var(--c0);border-color:var(--c0);background:#e6f7f5}
+.add-layer-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:2px dashed var(--border2);border-radius:12px;background:none;color:var(--text3);font-size:13px;font-family:var(--mono);cursor:pointer;width:100%;margin-top:12px;transition:all .15s}
+.add-layer-btn:hover{color:var(--c0);border-color:var(--c0);background:#e6f7f5}
+.layer-note{padding:9px 18px;background:var(--bg3);border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:var(--mono)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media print{.sidebar{display:none}.main{margin-left:0;padding:24px;max-width:100%}}
+@media (max-width:900px){.context-grid,.summary-grid,.phase-grid{grid-template-columns:1fr}.registry-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="tag">SAP S/4HANA · FRS Accuracy</div>
+    <h1>Enterprise FRS-R<br>Framework</h1>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-lbl">Overview</div>
+    <a class="nav-a active" href="#hero"><span class="ndot" style="background:var(--c0)"></span>Framework</a>
+    <a class="nav-a" href="#formula"><span class="ndot" style="background:var(--c1)"></span>FRS-R Formula</a>
+    <a class="nav-a" href="#categories"><span class="ndot" style="background:var(--amber)"></span>Category config</a>
+    <a class="nav-a" href="#context-filter"><span class="ndot" style="background:var(--green)"></span>Context Filter</a>
+    <a class="nav-a" href="#live"><span class="ndot" style="background:#5b3fc4"></span>Live calculator</a>
+    <a class="nav-a" href="#master-registry"><span class="ndot" style="background:var(--red)"></span>Master checklist</a>
+    <div class="nav-lbl">Layers</div>
+    <div id="sidebar-layer-links"></div>
+    <div class="nav-lbl">Management</div>
+    <a class="nav-a" href="#add-layer-section"><span class="ndot" style="background:var(--green)"></span>Add layer</a>
+  </nav>
+  <div class="sb-foot">v2.2 · Dynamic checklist load<br>7 layers · localStorage persist</div>
+</aside>
+<main class="main">
+<div class="hero" id="hero">
+  <div class="hero-eye">SAP S/4HANA WRICEF · FRS Reliability Score</div>
+  <h2>FRS-R <span>Enterprise</span><br>Accuracy Framework</h2>
+  <p class="hero-sub">Multi-layer SME-driven scoring. All weights, importance values, status values, and hallucination penalties are SME-assigned. Data auto-saves to browser localStorage — persists after refresh.</p>
+  <div class="hero-meta">
+    <span class="hero-mi"><span class="ndot" style="background:var(--c0)"></span>7 scoring layers</span>
+    <span class="hero-mi"><span class="ndot" style="background:var(--amber)"></span>Critical / Major / Minor importance values</span>
+    <span class="hero-mi"><span class="ndot" style="background:var(--green)"></span>Pass / Partial / Fail — SME-defined multipliers</span>
+    <span class="hero-mi"><span class="ndot" style="background:var(--red)"></span>Auto-saved to localStorage</span>
+  </div>
+</div>
+<!-- FORMULA -->
+<section class="section" id="formula">
+  <div class="sec-hdr"><span class="sec-num">01</span><h3>FRS-R Formula</h3><div class="sec-line"></div></div>
+  <div class="fbox">
+    <div class="fbox-lbl">Final Enterprise Formula</div>
+    <div class="fbox-main" id="formula-display">FRS-R = ( &Sigma;(W&sub;i; &times; LS&sub;i;) / &Sigma;W&sub;i; )</div>
+    <div class="fbox-note">
+      FRS-R = Final Enterprise Reliability Score &nbsp;|&nbsp; W&sub;i; = SME layer weight &nbsp;|&nbsp; LS&sub;i; = Layer score (0&ndash;100) &nbsp;|&nbsp; n = Total active layers<br><br>
+      <strong>Check Score:</strong> Each checklist item &rarr; Check Score = Importance Value &times; Status Value<br>
+      &nbsp;&nbsp;Status Multipliers: SME-defined (defaults: Pass=1, Partial=0.5, Fail=0)<br><br>
+      <strong>Layer Score (LS):</strong> &Sigma;(Check Scores of all items) / Total Possible (= &Sigma; all Importance Values) &times; 100<br><br>
+      <strong>Hallucination Penalty:</strong> A dedicated group in each layer with a direct SME-assigned penalty value (0&ndash;100). When HP occurs, its value is <em>subtracted</em> from the Layer Score: <code>LS&prime; = LS &minus; HP&nbsp;Penalty</code>.
+    </div>
+    <div class="fbox-rule">Hard Rule (SAP Reliability Score only): If SRS layer score &lt; SME-defined cap threshold &rarr; Final FRS-R capped at SME-defined cap value.</div>
+  </div>
+  <div class="callout info"><strong>Check Score example:</strong> Importance Value of Critical = 10. If Pass &rarr; Check Score = 10 &times; 1 = 10. If Partial &rarr; 10 &times; 0.5 = 5. If Fail &rarr; 10 &times; 0 = 0. Layer Score = &Sigma;Check Scores / &Sigma;Importance Values &times; 100.</div>
+</section>
+<!-- CATEGORY CONFIG -->
+<section class="section" id="categories">
+  <div class="sec-hdr"><span class="sec-num">02</span><h3>Category &amp; Status Values &mdash; SME Defined</h3><div class="sec-line"></div></div>
+  <p class="prose">SME defines both the <strong>Importance Value</strong> for each category and the <strong>Status Value</strong> multiplier for each outcome. Check Score = Importance Value &times; Status Value.</p>
+
+  <!-- STATUS VALUES ROW -->
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px 22px;margin-bottom:16px;box-shadow:var(--sh)">
+    <div style="font-family:var(--display);font-size:13px;font-weight:700;margin-bottom:4px">Status Multipliers &mdash; SME Defined</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:14px">These multiply the Importance Value to produce the Check Score. Fail is typically 0 but can be adjusted.</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div class="cat-field" style="flex:1;min-width:100px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--green);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:5px">&#10003; Pass Multiplier</label>
+        <input type="number" id="sv-pass" value="1" step="0.1" min="0" max="10" style="border:1px solid var(--green);border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green);background:var(--bg3);width:100%" onchange="saveAndUpdate()">
+        <!-- <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px">Current: <strong id="sv-pass-disp" style="color:var(--green)">1</strong></div> -->
+      </div>
+      <div class="cat-field" style="flex:1;min-width:100px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:5px">&#8776; Partial Multiplier</label>
+        <input type="number" id="sv-partial" value="0.5" step="0.1" min="0" max="10" style="border:1px solid var(--amber);border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--amber);background:var(--bg3);width:100%" onchange="saveAndUpdate()">
+        <!-- <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px">Current: <strong id="sv-partial-disp" style="color:var(--amber)">0.5</strong></div> -->
+      </div>
+      <div class="cat-field" style="flex:1;min-width:100px">
+        <label style="font-family:var(--mono);font-size:9px;color:var(--red);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:5px">&#10007; Fail Multiplier</label>
+        <input type="number" id="sv-fail" value="0" step="0.1" min="0" max="10" style="border:1px solid var(--red);border-radius:5px;padding:5px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--red);background:var(--bg3);width:100%" onchange="saveAndUpdate()">
+        <!-- <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px">Current: <strong id="sv-fail-disp" style="color:var(--red)">0</strong></div> -->
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORTANCE VALUES GRID -->
+  <div class="cat-config">
+    <div class="cat-card">
+      <div class="cat-card-hdr"><span class="cat-dot" style="background:var(--red)"></span><h4>Critical</h4></div>
+      <div class="cat-field"><label>Importance Value</label><input type="number" id="cat-critical-iv" value="10" step="1" min="0" onchange="saveAndUpdate()"></div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.9">
+        <!-- Pass: <strong id="crit-pass-eg">10</strong> &nbsp;|&nbsp; Partial: <strong id="crit-partial-eg">5.0</strong> &nbsp;|&nbsp; Fail: <strong id="crit-fail-eg">0</strong> -->
+      </div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-card-hdr"><span class="cat-dot" style="background:var(--amber)"></span><h4>Major</h4></div>
+      <div class="cat-field"><label>Importance Value</label><input type="number" id="cat-major-iv" value="5" step="1" min="0" onchange="saveAndUpdate()"></div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.9">
+        <!-- Pass: <strong id="maj-pass-eg">5</strong> &nbsp;|&nbsp; Partial: <strong id="maj-partial-eg">2.5</strong> &nbsp;|&nbsp; Fail: <strong id="maj-fail-eg">0</strong> -->
+      </div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-card-hdr"><span class="cat-dot" style="background:var(--green)"></span><h4>Minor</h4></div>
+      <div class="cat-field"><label>Importance Value</label><input type="number" id="cat-minor-iv" value="2" step="1" min="0" onchange="saveAndUpdate()"></div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.9">
+        <!-- Pass: <strong id="min-pass-eg">2</strong> &nbsp;|&nbsp; Partial: <strong id="min-partial-eg">1.0</strong> &nbsp;|&nbsp; Fail: <strong id="min-fail-eg">0</strong> -->
+      </div>
+    </div>
+  </div>
+</section>
+<!-- CONTEXT FILTER -->
+<section class="section" id="context-filter">
+  <div class="sec-hdr"><span class="sec-num">03</span><h3>SAP Context Filter</h3><div class="sec-line"></div></div>
+  <p class="prose">The prototype starts from the complete master checklist, then creates a temporary validation scope from constant phases plus the selected WRICEF object and SAP module.</p>
+  <div class="context-panel">
+    <div class="lp-title">Dynamic Checklist Loader</div>
+    <div class="lp-sub">Phase 1, 2, 3, 6, and 7 always load. Phase 4 changes by WRICEF type. Phase 5 changes by SAP module.</div>
+    <div class="context-grid">
+      <div class="context-field">
+        <label for="sap-module-filter">SAP Module</label>
+        <select id="sap-module-filter" onchange="applyContextFromUI()">
+          <option value="All">All</option>
+          <option value="SD">SD</option>
+          <option value="FI">FI</option>
+          <option value="CO">CO</option>
+          <option value="MM">MM</option>
+          <option value="QM">QM</option>
+          <option value="HR">HR</option>
+          <option value="HCM">HCM</option>
+          <option value="EWM">EWM</option>
+          <option value="PP">PP</option>
+          <option value="WM">WM</option>
+        </select>
+      </div>
+      <div class="context-field">
+        <label for="wricef-filter">WRICEF Type</label>
+        <select id="wricef-filter" onchange="applyContextFromUI()">
+          <option value="All">All</option>
+          <option value="Workflow">Workflow</option>
+          <option value="Report">Report</option>
+          <option value="Interface">Interface</option>
+          <option value="Conversion">Conversions</option>
+          <option value="Enhancement">Enhancement</option>
+          <option value="Forms">Forms</option>
+          <option value="Fiori">Fiori</option>
+        </select>
+      </div>
+    </div>
+    <div id="context-status" class="callout info"><strong>Loading master checklist...</strong> The CSV-backed master registry will populate the layer checklists once available.</div>
+    <div class="summary-grid" id="context-summary-cards"></div>
+    <div class="phase-grid" id="phase-summary-grid"></div>
+    <details class="md-preview">
+      <summary>Temporary MD Scope Preview</summary>
+      <pre id="temp-md-preview">Master checklist not loaded yet.</pre>
+    </details>
+  </div>
+</section>
+<!-- LIVE CALCULATOR -->
+<section class="section" id="live">
+  <div class="sec-hdr"><span class="sec-num">04</span><h3>Live FRS-R Calculator</h3><div class="sec-line"></div></div>
+  <!-- SAVE BAR -->
+  <div class="save-bar">
+    <span>&#128190; All changes auto-saved to browser localStorage. Use Export/Import for backup or sharing.</span>
+    <button class="sb-btn save" onclick="exportJSON()">&#8595; Export JSON</button>
+    <button class="sb-btn load" onclick="exportPDF()">&#128462; Export PDF</button>
+    <!-- <button class="sb-btn load" onclick="document.getElementById('import-file').click()">&#8593; Import JSON</button> -->
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+    <button class="sb-btn reset" onclick="confirmReset()">&#8635; Reset</button>
+    <span class="save-status" id="save-status"></span>
+  </div>
+  <div class="live-panel">
+    <div class="lp-title">FRS-R &middot; Final Enterprise Reliability Score</div>
+    <div class="lp-sub">Live &mdash; auto-saves every change. Persists after browser refresh.</div>
+    <div class="lp-top">
+      <div>
+        <div class="lp-score-big" id="lp-score" style="color:var(--text3)">&#8212;</div>
+        <div class="lp-status" id="lp-status" style="background:var(--bg3);color:var(--text3)">AWAITING INPUT</div>
+      </div>
+      <div class="lp-grid" id="lp-grid"></div>
+    </div>
+    <div class="lp-formula" id="lp-formula">Enter layer weights and checklist statuses to begin...</div>
+  </div>
+  <div class="wt-panel">
+    <div style="font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:3px">Layer Weight Assignment &mdash; W&sub;i; (SME Defined)</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:var(--mono)">Formula normalises by &Sigma;W&sub;i; so weights need not sum to 100.</div>
+    <div id="wt-rows-container"></div>
+    <div class="wsum-bar">
+      <span style="font-size:12px;color:var(--text2)">&Sigma;W&sub;i;:</span>
+      <span class="wsum-val" id="wsum-val" style="color:var(--text3)">0</span>
+      <span id="wsum-note" style="font-size:11px;color:var(--text3)">&#8212; enter layer weights</span>
+    </div>
+  </div>
+</section>
+<!-- LAYERS -->
+<section class="section" id="layers-section">
+  <div class="sec-hdr"><span class="sec-num">05</span><h3>Scoring Layers &amp; Dynamic Checklists</h3><div class="sec-line"></div></div>
+  <p class="prose">Each layer receives the currently selected checklist scope. <strong>Hallucination Penalty</strong> remains a dedicated editable group inside each layer and is deducted from the layer score.</p>
+  <div id="layers-container"></div>
+  <div id="add-layer-section">
+    <button class="add-layer-btn" onclick="addLayer()">&#65291; Add new scoring layer</button>
+  </div>
+</section>
+<!-- MASTER CHECKLIST REGISTRY -->
+<section class="section" id="master-registry">
+  <div class="sec-hdr"><span class="sec-num">06</span><h3>Master Checklist Registry</h3><div class="sec-line"></div></div>
+  <p class="prose">This is the complete CSV-backed master checklist. The context filter above pulls from this registry into the seven scoring layers.</p>
+  <div class="master-registry-panel" id="master-registry-panel">
+    <div class="lp-sub">Loading complete master checklist...</div>
+  </div>
+</section>
+</main>
+</div>
+<script>
+// ═══════ PALETTE ═══════
+const COLORS=['#0077aa','#1a6fd4','#c41e3a','#b06000','#2a7d3f','#5b3fc4','#0099a8','#8b2fc4'];
+const DIMS  =['#e6f4f8','#e8f0fc','#fce8e8','#fef3e2','#e8f4e8','#f0ebfb','#e6f7f5','#f5e8fc'];
+const BORDS =['#a0c8d8','#90b8f0','#f0a0a0','#f5d080','#90c8a0','#c0a0f0','#a0d8dc','#d0a0f0'];
+const LS_KEY = 'frs_r_state_v8_dynamic';
+
+// ═══════ DEFAULT DATA ═══════
+const DEFAULT_LAYERS = [
+  {abbr:'RCS', name:'Requirement Coverage Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'SCS', name:'Structure Compliance Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'FCS', name:'Functional Compliance Score',        isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'TCS', name:'Technical Compliance Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'MCCS',name:'Module Context Compliance Score',    isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'SRS', name:'SAP Reliability Score',              isSAP:true,  weight:1, capEnabled:true,  capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'TSCS',name:'Test Case SignOff Compliance Score', isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  {abbr:'CRS', name:'Contextual Relevance Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+];
+
+// ═══════ STATE ═══════
+let state = { catIV:{critical:10,major:5,minor:2}, catSV:{pass:1,partial:0.5,fail:0}, context:{module:'All',wricef:'All'}, layers:[], checklists:[] };
+let layerCounter = 0;
+let clCounter = [];
+let masterChecklist = [];
+let masterLoaded = false;
+
+// ═══════ LOCALSTORAGE ═══════
+function saveState() {
+  // collect live inputs before saving
+  state.layers.forEach((l,li) => {
+    const wEl = document.getElementById('lw-'+li);
+    const pEl = document.getElementById('lpen-'+li);
+    const ctEl = document.getElementById('lcapT-'+li);
+    const cvEl = document.getElementById('lcapV-'+li);
+    if(wEl) l.weight = parseFloat(wEl.value)||0;
+    if(pEl) l.capEnabled = document.getElementById('lcapToggle-'+li) ? document.getElementById('lcapToggle-'+li).checked : l.capEnabled;
+    if(ctEl) l.capThreshold = parseFloat(ctEl.value)||0;
+    if(cvEl) l.capValue = parseFloat(cvEl.value)||0;
+    const hpEl = document.getElementById('lhp-'+li);
+    if(hpEl) l.hpPenalty = parseFloat(hpEl.value)||0;
+  });
+  const civEl = document.getElementById('cat-critical-iv');
+  const mivEl = document.getElementById('cat-major-iv');
+  const minivEl= document.getElementById('cat-minor-iv');
+  if(civEl) state.catIV.critical = parseFloat(civEl.value)||10;
+  if(mivEl) state.catIV.major    = parseFloat(mivEl.value)||5;
+  if(minivEl) state.catIV.minor  = parseFloat(minivEl.value)||2;
+  if(!state.catSV) state.catSV={pass:1,partial:0.5,fail:0};
+  const svPassEl=document.getElementById('sv-pass'); if(svPassEl) state.catSV.pass=parseFloat(svPassEl.value)||0;
+  const svPartEl=document.getElementById('sv-partial'); if(svPartEl) state.catSV.partial=parseFloat(svPartEl.value)||0;
+  const svFailEl=document.getElementById('sv-fail'); if(svFailEl) state.catSV.fail=parseFloat(svFailEl.value)||0;
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({state, layerCounter, clCounter}));
+    const el = document.getElementById('save-status');
+    if(el){ el.textContent='✓ Saved '+new Date().toLocaleTimeString(); setTimeout(()=>{ if(el)el.textContent=''; },3000); }
+  } catch(e){ console.warn('localStorage save failed',e); }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    const parsed = JSON.parse(raw);
+    if(parsed.state) {
+      state = parsed.state;
+      if(!state.context) state.context = {module:'All',wricef:'All'};
+      if(!state.catSV) state.catSV = {pass:1,partial:0.5,fail:0};
+      layerCounter = parsed.layerCounter||0;
+      clCounter = parsed.clCounter||[];
+      return true;
+    }
+  } catch(e){ console.warn('localStorage load failed',e); }
+  return false;
+}
+
+function saveAndUpdate() { updateAll(); saveState(); }
+
+function exportJSON() {
+  saveState();
+  const blob = new Blob([localStorage.getItem(LS_KEY)||'{}'],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='frs_r_state.json'; a.click();
+}
+
+function exportPDF() {
+  saveState();
+  updateAll();
+  const reportWindow = window.open('', '_blank');
+  if(!reportWindow) {
+    alert('Popup blocked. Please allow popups for this file, then try Export PDF again.');
+    return;
+  }
+  reportWindow.document.open();
+  reportWindow.document.write(buildPDFReportHTML());
+  reportWindow.document.close();
+  reportWindow.focus();
+  setTimeout(()=>reportWindow.print(), 300);
+}
+
+function buildPDFReportHTML() {
+  const ctx = state.context || {module:'All',wricef:'All'};
+  const overall = calcOverall();
+  const selected = state.checklists.filter(c=>c.group !== 'Hallucination Penalty');
+  const hpRows = state.checklists.filter(c=>c.group === 'Hallucination Penalty');
+  const counts = checklistSeverityCounts(selected);
+  const generatedAt = new Date().toLocaleString();
+  const score = overall ? overall.frs.toFixed(1) + '%' : 'N/A';
+  const totalWeight = overall ? overall.totalW : state.layers.reduce((s,l)=>s+(parseFloat(l.weight)||0),0);
+  const layerRows = state.layers.map((layer,li)=>{
+    const rows = selected.filter(c=>c.li===li);
+    const lc = checklistSeverityCounts(rows);
+    const hpTotal = hpRows.filter(c=>c.li===li).reduce((s,c)=>s+(parseFloat(c.hpValue)||0),0);
+    return `<tr>
+      <td>${escH(layer.abbr)}</td>
+      <td>${escH(layer.name)}</td>
+      <td class="num">${parseFloat(layer.weight||0)}</td>
+      <td class="num">${calcLayerScore(li).toFixed(1)}%</td>
+      <td class="num">${rows.length}</td>
+      <td class="num critical">${lc.critical}</td>
+      <td class="num major">${lc.major}</td>
+      <td class="num minor">${lc.minor}</td>
+      <td class="num">${hpTotal.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+  const checklistRows = selected.map((cl,idx)=>{
+    const layer = state.layers[cl.li] || {};
+    return `<tr>
+      <td class="num">${idx+1}</td>
+      <td>${escH(layer.abbr || '')}</td>
+      <td>${escH(cl.group)}</td>
+      <td class="${escH(cl.cat)}">${escH(cl.cat)}</td>
+      <td>${escH(cl.status || 'pass')}</td>
+      <td class="num">${calcCheckScore(cl).toFixed(1)} / ${calcCheckPossible(cl).toFixed(1)}</td>
+      <td>${escH(cl.item)}</td>
+    </tr>`;
+  }).join('');
+  const hpDetailRows = hpRows.map((cl,idx)=>{
+    const layer = state.layers[cl.li] || {};
+    return `<tr>
+      <td class="num">${idx+1}</td>
+      <td>${escH(layer.abbr || '')}</td>
+      <td>${escH(cl.item || 'Hallucination penalty')}</td>
+      <td class="num critical">${(parseFloat(cl.hpValue)||0).toFixed(1)}</td>
+      <td>${escH(cl.src || 'HP')}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5">No hallucination penalty rows recorded.</td></tr>';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>FRS-R SME Scoring Report</title>
+<style>
+  body{font-family:Arial,sans-serif;color:#1a1d2e;margin:28px;font-size:12px;line-height:1.45}
+  h1{font-size:22px;margin:0 0 4px;color:#0077aa}
+  h2{font-size:15px;margin:22px 0 8px;border-bottom:1px solid #dde1ec;padding-bottom:4px}
+  .muted{color:#667085}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .card{border:1px solid #dde1ec;border-radius:8px;padding:10px;background:#f7f9fc}
+  .label{font-size:10px;text-transform:uppercase;color:#667085;letter-spacing:.06em}.value{font-size:20px;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin:8px 0 16px;page-break-inside:auto}
+  th,td{border:1px solid #dde1ec;padding:6px;vertical-align:top}th{background:#f0f2f7;text-align:left}
+  tr{page-break-inside:avoid}.num{text-align:right;white-space:nowrap}.critical{color:#c41e3a;font-weight:700}.major{color:#c47a00;font-weight:700}.minor{color:#2a7d3f;font-weight:700}
+  .footer{margin-top:20px;color:#667085;font-size:10px}
+  @media print{body{margin:18mm}.no-print{display:none}h2{page-break-after:avoid}}
+</style>
+</head>
+<body>
+  <button class="no-print" onclick="window.print()" style="float:right;padding:8px 12px">Print / Save PDF</button>
+  <h1>FRS-R SME Scoring Report</h1>
+  <div class="muted">Generated: ${escH(generatedAt)}</div>
+  <div class="grid">
+    <div class="card"><div class="label">Final FRS-R</div><div class="value">${score}</div></div>
+    <div class="card"><div class="label">SAP Module</div><div class="value">${escH(ctx.module)}</div></div>
+    <div class="card"><div class="label">WRICEF Type</div><div class="value">${escH(ctx.wricef)}</div></div>
+    <div class="card"><div class="label">Total Weight</div><div class="value">${totalWeight}</div></div>
+    <div class="card"><div class="label">Selected Checks</div><div class="value">${counts.total}</div></div>
+    <div class="card"><div class="label">Critical</div><div class="value critical">${counts.critical}</div></div>
+    <div class="card"><div class="label">Major</div><div class="value major">${counts.major}</div></div>
+    <div class="card"><div class="label">Minor</div><div class="value minor">${counts.minor}</div></div>
+  </div>
+
+  <h2>SME Values</h2>
+  <table>
+    <tr><th>Critical IV</th><th>Major IV</th><th>Minor IV</th><th>Pass Multiplier</th><th>Partial Multiplier</th><th>Fail Multiplier</th></tr>
+    <tr><td>${state.catIV.critical}</td><td>${state.catIV.major}</td><td>${state.catIV.minor}</td><td>${getSV('pass')}</td><td>${getSV('partial')}</td><td>${getSV('fail')}</td></tr>
+  </table>
+
+  <h2>Layer Scores And Weights</h2>
+  <table>
+    <tr><th>Layer</th><th>Name</th><th>Weight</th><th>Score</th><th>Checks</th><th>Critical</th><th>Major</th><th>Minor</th><th>HP Deduction</th></tr>
+    ${layerRows}
+  </table>
+
+  <h2>Hallucination Penalties</h2>
+  <table>
+    <tr><th>#</th><th>Layer</th><th>Penalty Item</th><th>Penalty Points</th><th>Source</th></tr>
+    ${hpDetailRows}
+  </table>
+
+  <h2>Selected Checklist Statuses</h2>
+  <table>
+    <tr><th>#</th><th>Layer</th><th>Group</th><th>Severity</th><th>Status</th><th>Score</th><th>Checklist Item</th></tr>
+    ${checklistRows}
+  </table>
+  <div class="footer">This report is generated from the SME browser-local state in the FRS-R HTML prototype.</div>
+</body>
+</html>`;
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if(parsed.state){ state=parsed.state; layerCounter=parsed.layerCounter||0; clCounter=parsed.clCounter||[]; }
+      localStorage.setItem(LS_KEY, ev.target.result);
+      initRender();
+      alert('Imported successfully.');
+    } catch(err){ alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+}
+
+function confirmReset() {
+  if(confirm('Reset all data to defaults? This cannot be undone.')) {
+    localStorage.removeItem(LS_KEY);
+    initDefaults();
+    initRender();
+  }
+}
+
+// ═══════ DEFAULTS ═══════
+function initDefaults() {
+  state = { catIV:{critical:10,major:5,minor:2}, catSV:{pass:1,partial:0.5,fail:0}, context:{module:'All',wricef:'All'}, layers:[], checklists:[] };
+  state.layers = DEFAULT_LAYERS.map(l=>({hpPenalty:0,...l}));
+  layerCounter = state.layers.length;
+  clCounter = state.layers.map(()=>0);
+}
+
+// ═══════ CALCULATIONS ═══════
+function getIV(cat) { return state.catIV[cat]||0; }
+function getSV(k){ return parseFloat((state.catSV||{})[k])||0; }
+function getStatusVal(status) { return getSV(status); }
+
+function calcCheckScore(cl) { return getIV(cl.cat) * getStatusVal(cl.status); }
+function calcCheckPossible(cl) { return getIV(cl.cat); }
+
+function calcLayerScore(li) {
+  const cls = state.checklists.filter(c=>c.li===li && c.group!=='Hallucination Penalty');
+  const hpCls = state.checklists.filter(c=>c.li===li && c.group==='Hallucination Penalty');
+  let earned=0, possible=0;
+  cls.forEach(cl=>{ earned+=calcCheckScore(cl); possible+=calcCheckPossible(cl); });
+  let score = possible>0 ? (earned/possible*100) : 0;
+  // HP penalty = sum of all hpValue fields across HP checklist items
+  const penalty = hpCls.reduce((s,cl)=>s+(parseFloat(cl.hpValue)||0), 0);
+  if(state.layers[li]) state.layers[li].hpPenalty = penalty; // keep in sync
+  score = score - penalty;
+  return Math.max(0,Math.min(100,score));
+}
+
+function calcOverall() {
+  const totalW = state.layers.reduce((s,l)=>s+(parseFloat(l.weight)||0),0);
+  if(!totalW) return null;
+  let weighted=0;
+  state.layers.forEach((l,li)=>{ weighted += calcLayerScore(li)*(parseFloat(l.weight)||0); });
+  let frs = weighted/totalW;
+  // SRS hard cap
+  const srsIdx = state.layers.findIndex(l=>l.isSAP);
+  if(srsIdx>=0){
+    const srs=state.layers[srsIdx];
+    if(srs.capEnabled && calcLayerScore(srsIdx)<srs.capThreshold) frs=Math.min(frs,srs.capValue);
+  }
+  return {frs:Math.max(0,Math.min(100,frs)), totalW};
+}
+
+// ═══════ RENDER ALL ═══════
+function updateAll() {
+  updateCatExamples();
+  updateOverall();
+  updateWeightRowScores();
+  state.layers.forEach((_,li)=>updateLayerHeader(li));
+  renderContextSummary();
+}
+
+function updateCatExamples() {
+  const civ=getIV('critical'),miv=getIV('major'),miniv=getIV('minor');
+  const sv_pass=getSV('pass'), sv_part=getSV('partial'), sv_fail=getSV('fail');
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('crit-pass-eg',(civ*sv_pass).toFixed(1));   set('crit-partial-eg',(civ*sv_part).toFixed(1));   set('crit-fail-eg',(civ*sv_fail).toFixed(1));
+  set('maj-pass-eg', (miv*sv_pass).toFixed(1));    set('maj-partial-eg', (miv*sv_part).toFixed(1));    set('maj-fail-eg', (miv*sv_fail).toFixed(1));
+  set('min-pass-eg', (miniv*sv_pass).toFixed(1));  set('min-partial-eg', (miniv*sv_part).toFixed(1));  set('min-fail-eg', (miniv*sv_fail).toFixed(1));
+  // update SV display spans
+  set('sv-pass-disp',sv_pass); set('sv-partial-disp',sv_part); set('sv-fail-disp',sv_fail);
+}
+
+function updateOverall() {
+  const res=calcOverall();
+  const scoreEl=document.getElementById('lp-score');
+  const statusEl=document.getElementById('lp-status');
+  const formulaEl=document.getElementById('lp-formula');
+  const gridEl=document.getElementById('lp-grid');
+  const totalW=state.layers.reduce((s,l)=>s+(parseFloat(l.weight)||0),0);
+
+  gridEl.innerHTML='';
+  state.layers.forEach((l,li)=>{
+    const ls=Math.round(calcLayerScore(li));
+    gridEl.innerHTML+=`<div class="lp-chip"><div class="lp-chip-id" style="color:${COLORS[li%8]}">${l.abbr}</div><div class="lp-chip-score" style="color:${COLORS[li%8]}">${ls}%</div><div class="lp-chip-w">W=${l.weight}</div></div>`;
+  });
+
+  if(!res||totalW===0){
+    scoreEl.textContent='—'; scoreEl.style.color='var(--text3)';
+    statusEl.textContent='AWAITING INPUT'; statusEl.style.background='var(--bg3)'; statusEl.style.color='var(--text3)';
+    formulaEl.textContent='Enter layer weights to begin...'; return;
+  }
+  const s=res.frs.toFixed(1);
+  scoreEl.textContent=s+'%';
+  let sColor,sBg,sTxt;
+  if(res.frs>=85){sColor='var(--green)';sBg='#e8f4e8';sTxt='READY FOR REVIEW';}
+  else if(res.frs>=65){sColor='var(--amber)';sBg='#fef3e2';sTxt='REVIEW REQUIRED';}
+  else{sColor='var(--red)';sBg='#fce8e8';sTxt='REWORK REQUIRED';}
+  scoreEl.style.color=sColor; statusEl.textContent=sTxt; statusEl.style.background=sBg; statusEl.style.color=sColor;
+  const abbrs=state.layers.map((l,i)=>`${String.fromCharCode(97+i)}(${l.abbr})`).join('+');
+  const wsum=state.layers.map(l=>l.weight).join('+');
+  document.getElementById('formula-display').textContent=`FRS-R = ( ${abbrs} ) / (${wsum})`;
+  const parts=state.layers.map((l,li)=>`${l.weight}\u00D7${Math.round(calcLayerScore(li))}`).join(' + ');
+  formulaEl.innerHTML=`FRS-R = (${parts}) / ${totalW} = <strong>${s}%</strong>`;
+}
+
+function updateWeightRowScores() {
+  const totalW=state.layers.reduce((s,l)=>s+(parseFloat(l.weight)||0),0);
+  const sv=document.getElementById('wsum-val');
+  const sn=document.getElementById('wsum-note');
+  if(sv){sv.textContent=totalW;sv.style.color=totalW>0?'var(--green)':'var(--text3)';}
+  if(sn)sn.textContent=totalW>0?'(used as \u03A3W\u1D62 in formula)':'— enter weights';
+  state.layers.forEach((_,li)=>{
+    const wls=document.getElementById('wtls-'+li);
+    if(wls){wls.textContent=Math.round(calcLayerScore(li))+'%';wls.style.color=COLORS[li%8];}
+  });
+}
+
+function updateLayerHeader(li) {
+  const layer=state.layers[li];
+  if(!layer)return;
+  const ls=calcLayerScore(li);
+  const cls=state.checklists.filter(c=>c.li===li);
+  const badge=document.getElementById('lyr-score-badge-'+li);
+  if(badge){badge.textContent=Math.round(ls)+'%';badge.style.color=COLORS[li%8];}
+  const lss=document.getElementById('lyr-ss-score-'+li);
+  if(lss){lss.textContent=Math.round(ls)+'%';lss.style.color=COLORS[li%8];}
+  const cnt=document.getElementById('lyr-counts-'+li);
+  const earned=cls.reduce((s,c)=>s+calcCheckScore(c),0);
+  const possible=cls.reduce((s,c)=>s+calcCheckPossible(c),0);
+  if(cnt)cnt.textContent=`${earned.toFixed(1)}/${possible.toFixed(1)} pts \u00B7 W=${layer.weight}`;
+  const frm=document.getElementById('lyr-frm-'+li);
+  const hpCls2=state.checklists.filter(c=>c.li===li&&c.group==='Hallucination Penalty');
+  const hpP=hpCls2.reduce((s,c)=>s+(parseFloat(c.hpValue)||0),0);
+  const clsNoHP=state.checklists.filter(c=>c.li===li&&c.group!=='Hallucination Penalty');
+  const earnedNoHP=clsNoHP.reduce((s,c)=>s+calcCheckScore(c),0);
+  const possibleNoHP=clsNoHP.reduce((s,c)=>s+calcCheckPossible(c),0);
+  const rawLS=possibleNoHP>0?(earnedNoHP/possibleNoHP*100):0;
+  if(frm)frm.textContent=hpP>0?`LS = ${earnedNoHP.toFixed(1)} / ${possibleNoHP.toFixed(1)} × 100 = ${rawLS.toFixed(1)}% − HP${hpP} = ${ls.toFixed(1)}%`:`LS = ${earnedNoHP.toFixed(1)} / ${possibleNoHP.toFixed(1)} × 100 = ${ls.toFixed(1)}%`;
+  const pfRow=document.getElementById('lyr-pf-'+li);
+  if(pfRow){
+    const bc={critical:{e:0,p:0},major:{e:0,p:0},minor:{e:0,p:0}};
+    cls.filter(c=>c.group!=='Hallucination Penalty').forEach(cl=>{bc[cl.cat].e+=calcCheckScore(cl);bc[cl.cat].p+=calcCheckPossible(cl);});
+    const hpPenDisplay=state.checklists.filter(c=>c.li===li&&c.group==='Hallucination Penalty').reduce((s,c)=>s+(parseFloat(c.hpValue)||0),0);
+    pfRow.innerHTML=`
+      <div class="pf-chip"><span class="pf-dot" style="background:var(--red)"></span>Critical: ${bc.critical.e.toFixed(1)}/${bc.critical.p.toFixed(1)}</div>
+      <div class="pf-chip"><span class="pf-dot" style="background:var(--amber)"></span>Major: ${bc.major.e.toFixed(1)}/${bc.major.p.toFixed(1)}</div>
+      <div class="pf-chip"><span class="pf-dot" style="background:var(--green)"></span>Minor: ${bc.minor.e.toFixed(1)}/${bc.minor.p.toFixed(1)}</div>
+      ${hpPenDisplay>0?`<div class="pf-chip" style="border-color:#f0b0b0;background:#fff5f5"><span class="pf-dot" style="background:var(--red)"></span><span style="color:var(--red)">HP Deduction: −${hpPenDisplay}</span></div>`:''}
+      <div class="pf-chip" style="margin-left:auto;font-weight:700;color:${COLORS[li%8]}">LS′ = ${ls.toFixed(1)}%</div>`;
+  }
+  // update individual checklist score tags
+  cls.forEach((cl,_)=>{
+    const tag=document.getElementById('cl-score-tag-'+cl.id);
+    const contrib=document.getElementById('cl-contrib-'+cl.id);
+    const cs=calcCheckScore(cl);
+    const poss=calcCheckPossible(cl);
+    if(tag){
+      tag.textContent=cs.toFixed(1)+'/'+poss.toFixed(1);
+      tag.style.background=cl.status==='pass'?'#e8f4e8':cl.status==='partial'?'#fef3e2':'#fce8e8';
+      tag.style.color=cl.status==='pass'?'var(--green)':cl.status==='partial'?'var(--amber)':'var(--red)';
+    }
+    if(contrib){
+      const sv=getStatusVal(cl.status);
+      contrib.textContent=`IV${getIV(cl.cat)}\u00D7${sv}=${cs.toFixed(1)}`;
+      contrib.style.color=cl.status==='pass'?'var(--green)':cl.status==='partial'?'var(--amber)':'var(--red)';
+    }
+  });
+}
+
+// ═══════ RENDER LAYER ═══════
+function renderLayer(li) {
+  const layer=state.layers[li];
+  if(!layer)return;
+  const col=COLORS[li%8];const dim=DIMS[li%8];const brd=BORDS[li%8];
+  const isOpen=document.getElementById('lyr-body-'+li)?document.getElementById('lyr-body-'+li).classList.contains('open'):false;
+  const existing=document.getElementById('layer-card-'+li);
+  const container=document.getElementById('layers-container');
+  const cls=state.checklists.filter(c=>c.li===li);
+  const div=document.createElement('div');
+  div.className='layer-card'; div.id='layer-card-'+li;
+  div.innerHTML=`
+    <div class="layer-card-hdr" onclick="toggleLayer(${li})">
+      <div style="display:flex;flex-direction:column;gap:2px;margin-right:4px">
+        <button onclick="event.stopPropagation();reorderLayer(${li},-1)" title="Move up" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;padding:0 3px;line-height:1;border-radius:3px" onmouseover="this.style.color='var(--c1)'" onmouseout="this.style.color='var(--text3)'">▲</button>
+        <button onclick="event.stopPropagation();reorderLayer(${li},1)" title="Move down" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;padding:0 3px;line-height:1;border-radius:3px" onmouseover="this.style.color='var(--c1)'" onmouseout="this.style.color='var(--text3)'">▼</button>
+      </div>
+      <span class="layer-pill" style="background:${dim};color:${col};border:1px solid ${brd}">${layer.abbr}</span>
+      <div class="layer-title-blk">
+        <div class="layer-title">${layer.name}</div>
+        <div class="layer-abbr">${layer.abbr}${layer.isSAP?' \u00B7 SAP Live Validation':''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="layer-score-badge" id="lyr-score-badge-${li}" style="color:${col}">0%</div>
+        <div class="layer-counts" id="lyr-counts-${li}">0/0 pts &middot; W=${layer.weight}</div>
+      </div>
+      <button class="collapse-btn${isOpen?' open':''}" id="lyr-collapse-btn-${li}" onclick="event.stopPropagation();toggleLayer(${li})">&#9660;</button>
+    </div>
+    <div class="layer-body${isOpen?' open':''}" id="lyr-body-${li}">
+      <div class="layer-frm" id="lyr-frm-${li}">LS = 0 / 0 &times; 100 = 0%</div>
+      <div class="pf-row" id="lyr-pf-${li}"></div>
+      <div class="lyr-cfg">
+        <div class="lyr-cfg-block">
+          <span class="lyr-cfg-label">Layer Weight (W&sub;i;)</span>
+          <input class="lyr-cfg-input" type="number" value="${layer.weight}" min="0" step="0.1" id="lw-${li}" onchange="state.layers[${li}].weight=parseFloat(this.value)||0;saveAndUpdate();syncWeightSlider(${li})">
+        </div>
+        ${layer.isSAP?`
+        <div class="lyr-cfg-block">
+          <span class="lyr-cfg-label" style="color:var(--red)">Cap Threshold (%)</span>
+          <input class="lyr-cfg-input" type="number" value="${layer.capThreshold}" min="0" max="100" id="lcapT-${li}" onchange="state.layers[${li}].capThreshold=parseFloat(this.value)||0;saveAndUpdate()">
+        </div>
+        <div class="lyr-cfg-block">
+          <span class="lyr-cfg-label" style="color:var(--red)">Cap Value (%)</span>
+          <input class="lyr-cfg-input" type="number" value="${layer.capValue}" min="0" max="100" id="lcapV-${li}" onchange="state.layers[${li}].capValue=parseFloat(this.value)||0;saveAndUpdate()">
+        </div>
+        <div class="lyr-cfg-block" style="justify-content:flex-end">
+          <span class="lyr-cfg-label" style="color:var(--red)">Cap Active</span>
+          <label style="display:flex;align-items:center;gap:4px;margin-top:4px">
+            <input type="checkbox" id="lcapToggle-${li}" ${layer.capEnabled?'checked':''} onchange="state.layers[${li}].capEnabled=this.checked;saveAndUpdate()" style="accent-color:var(--red)">
+            <span style="font-size:11px;color:var(--red);font-family:var(--mono)">Hard cap if SRS &lt; ${layer.capThreshold}%</span>
+          </label>
+        </div>` :''}
+        <input type="hidden" id="lhp-${li}" value="${layer.hpPenalty||0}">
+        <div style="flex:1"></div>
+        <button onclick="removeLayer(${li})" style="align-self:flex-end;padding:4px 10px;border:1px solid var(--border2);border-radius:5px;background:none;color:var(--text3);font-size:10px;cursor:pointer;font-family:var(--mono)" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border2)'">&#215; Remove layer</button>
+      </div>
+      <div class="layer-ss">
+        <div class="lss-sc" id="lyr-ss-score-${li}" style="color:${col}">0%</div>
+        <div class="lss-info">
+          <div style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">Layer Score &mdash; ${layer.name}</div>
+          <div>LS = &Sigma;(IV &times; Status) / &Sigma;(IV) &times; 100${layer.isSAP?' &middot; Hard cap if below threshold':''}</div>
+          <div style="margin-top:2px;font-size:9px;color:var(--text3)">Hallucination Penalty deducted from LS: LS&prime; = LS &minus; HP&nbsp;Penalty</div>
+        </div>
+      </div>
+      <div class="cl-container" id="cl-list-${li}">${renderChecklistsHTML(li)}</div>
+      <div class="add-cl-row">
+        <button class="add-cl-btn" onclick="addChecklist(${li})">&#65291; Add checklist item</button>
+        <button class="add-cl-btn" onclick="addChecklistGroup(${li})">&#65291; Add new group</button>
+      </div>
+      <div class="layer-note">Total: ${cls.length} checklist items &middot; IV=Importance Value set globally above &middot; Status: Pass=1, Partial=0.5, Fail=0${layer.isSAP?' &middot; SAP Live validation layer':''}</div>
+    </div>`;
+  if(existing)existing.replaceWith(div);
+  else container.appendChild(div);
+  updateLayerHeader(li);
+}
+
+function renderChecklistsHTML(li) {
+  const allCls = state.checklists.filter(c=>c.li===li);
+  const groupOrder = [];
+  const groups = {};
+  allCls.forEach(cl=>{
+    if(!groups[cl.group]){ groups[cl.group]=[]; groupOrder.push(cl.group); }
+    groups[cl.group].push(cl);
+  });
+  // HP always last
+  const hpPos = groupOrder.indexOf('Hallucination Penalty');
+  if(hpPos > -1 && hpPos < groupOrder.length-1){ groupOrder.splice(hpPos,1); groupOrder.push('Hallucination Penalty'); }
+
+  const layer = state.layers[li];
+  let html = '';
+
+  groupOrder.forEach(grp=>{
+    const items = groups[grp];
+    const isHP = grp==='Hallucination Penalty';
+    const safeGrp = grp.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+    if(isHP){
+      // HP = checklist rows with description + numeric penalty value each
+      // Total HP = sum of all item values, subtracted from LS
+      const totalHP = items.reduce((s,cl)=>s+(parseFloat(cl.hpValue)||0),0);
+      // sync hpPenalty on layer so calcLayerScore picks it up
+      if(layer) layer.hpPenalty = totalHP;
+      html += `<div class="cl-group-hdr" style="background:#fff0f0;border-color:#f0b0b0;color:var(--red);justify-content:space-between">
+        <span>&#9888; HALLUCINATION PENALTY
+          <span style="font-size:9px;color:var(--text3);margin-left:6px;font-weight:400;text-transform:none;letter-spacing:0">${items.length} item${items.length!==1?'s':''} &mdash; total deduction: <strong style="color:var(--red)">${totalHP.toFixed(1)} pts</strong></span>
+        </span>
+        <button class="add-cl-btn" style="padding:3px 9px;font-size:9px;border-color:#f0b0b0;color:var(--red)" onclick="event.stopPropagation();addHPItem(${li})">+ Add hallucination</button>
+      </div>`;
+      items.forEach((cl,idx)=>{
+        const hpV = parseFloat(cl.hpValue)||0;
+        html+=`<div class="cl-row" id="clrow-${cl.id}" style="background:#fff8f8">
+          <div class="cl-num" style="color:var(--red);border-right-color:#f0b0b0">${idx+1}</div>
+          <div class="cl-main" style="border-right:1px solid #f0b0b0">
+            <input class="cl-item-in" type="text" value="${escH(cl.item)}" placeholder="Describe the hallucination found\u2026"
+              onchange="setCLItem('${cl.id}',this.value)" style="color:var(--red)">
+            <input class="cl-src-in" type="text" value="${escH(cl.src)}" onchange="setCLSrc('${cl.id}',this.value)" placeholder="Source / reference">
+          </div>
+          <div class="cl-ctrl" style="flex-direction:row;align-items:center;gap:10px;min-width:auto;padding:8px 14px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-family:var(--mono);font-size:9px;color:var(--red);text-transform:uppercase;letter-spacing:.07em">Penalty pts</span>
+              <input type="number" min="0" step="0.1" value="${hpV}" placeholder="0"
+                style="width:72px;border:2px solid var(--red);border-radius:6px;padding:4px 6px;font-family:var(--mono);font-size:16px;font-weight:800;color:var(--red);background:#fff;text-align:center;outline:none"
+                oninput="setHPValue('${cl.id}',parseFloat(this.value)||0,${li})">
+            </div>
+            <button class="cl-rm" onclick="removeChecklist('${cl.id}')" title="Remove" style="color:var(--red)">&#215;</button>
+          </div>
+        </div>`;
+      });
+      html += `<div style="padding:8px 18px 10px;background:#fff0f0;border-bottom:1px solid #f0b0b0;display:flex;align-items:center;justify-content:flex-end;gap:8px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">Total HP deduction:</span>
+        <span id="hp-total-${li}" style="font-family:var(--mono);font-size:15px;font-weight:800;color:var(--red)">&minus;${totalHP.toFixed(1)} pts</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">subtracted from LS</span>
+      </div>`;
+    } else {
+      html += `<div class="cl-group-hdr">
+        \uD83D\uDCC2 ${grp}
+        <span style="color:var(--text3);font-size:9px;margin-left:4px">(${items.length} item${items.length!==1?'s':''})</span>
+        <button class="add-cl-btn" style="margin-left:auto;padding:3px 9px;font-size:9px" onclick="event.stopPropagation();addChecklistToGroup(${li},'${safeGrp}')">+ Add item</button>
+      </div>`;
+      items.forEach(cl=>{
+        const cs=calcCheckScore(cl); const poss=calcCheckPossible(cl);
+        const catColor=cl.cat==='critical'?'var(--red)':cl.cat==='minor'?'var(--green)':'var(--amber)';
+        const statusColor=cl.status==='pass'?'var(--green)':cl.status==='partial'?'var(--amber)':'var(--red)';
+        html+=`<div class="cl-row" id="clrow-${cl.id}">
+          <div class="cl-num">${escH(cl.id.split('_').pop()||'')}</div>
+          <div class="cl-main">
+            <input class="cl-item-in" type="text" value="${escH(cl.item)}" onchange="setCLItem('${cl.id}',this.value)">
+            <input class="cl-src-in" type="text" value="${escH(cl.src)}" onchange="setCLSrc('${cl.id}',this.value)" placeholder="Source / phase">
+            ${cl.sapTruth?'<span class="sap-tag">SAP \u2713</span>':''}
+          </div>
+          <div class="cl-ctrl">
+            <button class="cl-rm" onclick="removeChecklist('${cl.id}')" title="Remove">\u00D7</button>
+            <div class="cl-ctrl-row">
+              <span>Category:</span>
+              <select class="cl-sel" id="cl-cat-${cl.id}" onchange="setCLCat('${cl.id}',this.value)" style="border-left:3px solid ${catColor}">
+                <option value="critical" ${cl.cat==='critical'?'selected':''}>\uD83D\uDD34 Critical (IV=${getIV('critical')})</option>
+                <option value="major"    ${cl.cat==='major'   ?'selected':''}>\uD83D\uDFE1 Major (IV=${getIV('major')})</option>
+                <option value="minor"    ${cl.cat==='minor'   ?'selected':''}>\uD83D\uDFE2 Minor (IV=${getIV('minor')})</option>
+              </select>
+            </div>
+            <div class="cl-ctrl-row">
+              <span>Status:</span>
+              <select class="cl-status-sel" id="cl-status-${cl.id}" onchange="setCLStatus('${cl.id}',this.value)" style="border-left:3px solid ${statusColor}">
+                <option value="pass"    ${cl.status==='pass'   ?'selected':''}>&#10003; Pass (${getSV('pass')})</option>
+                <option value="partial" ${cl.status==='partial'?'selected':''}>&#8776; Partial (${getSV('partial')})</option>
+                <option value="fail"    ${cl.status==='fail'   ?'selected':''}>&#10007; Fail (${getSV('fail')})</option>
+              </select>
+            </div>
+            <span class="cl-score-tag" id="cl-score-tag-${cl.id}" style="background:#fce8e8;color:var(--red)">${cs.toFixed(1)}/${poss.toFixed(1)}</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="cl-contrib-${cl.id}">IV${getIV(cl.cat)}\u00D7${getStatusVal(cl.status)}=${cs.toFixed(1)}</span>
+          </div>
+        </div>`;
+      });
+    }
+  });
+  return html || '<div style="padding:16px 18px;font-size:12px;color:var(--text3);font-family:var(--mono)">No checklists yet \u2014 add items below</div>';
+}
+
+// ═══════ CHECKLIST ACTIONS ═══════
+function setCLItem(id,v){const cl=state.checklists.find(c=>c.id===id);if(cl){cl.item=v;saveState();}}
+function setCLSrc(id,v){const cl=state.checklists.find(c=>c.id===id);if(cl){cl.src=v;saveState();}}
+function setCLCat(id,v){
+  const cl=state.checklists.find(c=>c.id===id);
+  if(!cl)return;
+  cl.cat=v;
+  const catColor=v==='critical'?'var(--red)':v==='minor'?'var(--green)':'var(--amber)';
+  const selEl=document.getElementById('cl-cat-'+id);
+  if(selEl)selEl.style.borderLeft='3px solid '+catColor;
+  // update options text with current IVs
+  if(selEl){
+    selEl.options[0].text='\uD83D\uDD34 Critical (IV='+getIV('critical')+')';
+    selEl.options[1].text='\uD83D\uDFE1 Major (IV='+getIV('major')+')';
+    selEl.options[2].text='\uD83D\uDFE2 Minor (IV='+getIV('minor')+')';
+  }
+  updateLayerHeader(cl.li);saveAndUpdate();
+}
+function setCLStatus(id,v){
+  const cl=state.checklists.find(c=>c.id===id);
+  if(!cl)return;
+  cl.status=v;
+  const statusColor=v==='pass'?'var(--green)':v==='partial'?'var(--amber)':'var(--red)';
+  const selEl=document.getElementById('cl-status-'+id);
+  if(selEl)selEl.style.borderLeft='3px solid '+statusColor;
+  updateLayerHeader(cl.li);saveAndUpdate();
+}
+
+function removeChecklist(id) {
+  const cl=state.checklists.find(c=>c.id===id);
+  if(!cl)return;
+  const li=cl.li;
+  state.checklists=state.checklists.filter(c=>c.id!==id);
+  reRenderLayer(li);
+}
+
+function setHPValue(id, val, li) {
+  const cl = state.checklists.find(c=>c.id===id);
+  if(!cl) return;
+  cl.hpValue = val;
+  // recompute total and update display
+  const hpCls = state.checklists.filter(c=>c.li===li && c.group==='Hallucination Penalty');
+  const total = hpCls.reduce((s,c)=>s+(parseFloat(c.hpValue)||0),0);
+  if(state.layers[li]) state.layers[li].hpPenalty = total;
+  const totalEl = document.getElementById('hp-total-'+li);
+  if(totalEl) totalEl.textContent = '−'+total.toFixed(1)+' pts';
+  // update lhp hidden input
+  const lhp = document.getElementById('lhp-'+li);
+  if(lhp) lhp.value = total;
+  saveAndUpdate();
+}
+
+function addHPItem(li) {
+  clCounter[li] = (clCounter[li]||0)+1;
+  const id = 'hp_'+li+'_'+clCounter[li]+'_'+Date.now();
+  state.checklists.push({li, id, group:'Hallucination Penalty', item:'', src:'', hpValue:0, cat:'major', sapTruth:false, status:'pass'});
+  reRenderLayer(li);
+}
+
+function addChecklist(li) {
+  // add to first non-HP group if one exists, else create 'New Group'
+  const existing=state.checklists.filter(c=>c.li===li&&c.group!=='Hallucination Penalty');
+  const grp=existing.length>0?existing[existing.length-1].group:'New Group';
+  clCounter[li]=(clCounter[li]||0)+1;
+  const id='cl_'+li+'_'+clCounter[li]+'_'+Date.now();
+  // insert before HP items
+  const hpIdx=state.checklists.findIndex(c=>c.li===li&&c.group==='Hallucination Penalty');
+  const newItem={li,id,group:grp,item:'New checklist item — click to edit',cat:'major',src:'Phase',sapTruth:false,status:'pass'};
+  if(hpIdx>=0) state.checklists.splice(hpIdx,0,newItem);
+  else state.checklists.push(newItem);
+  reRenderLayer(li);
+}
+
+function addChecklistToGroup(li,grp) {
+  clCounter[li]=(clCounter[li]||0)+1;
+  const id='cl_'+li+'_'+clCounter[li]+'_'+Date.now();
+  // find last item in this group and insert after it, but always before HP
+  let insertIdx=state.checklists.length;
+  for(let i=state.checklists.length-1;i>=0;i--){
+    if(state.checklists[i].li===li&&state.checklists[i].group===grp){insertIdx=i+1;break;}
+  }
+  // ensure not after HP start
+  const hpIdx=state.checklists.findIndex(c=>c.li===li&&c.group==='Hallucination Penalty');
+  if(hpIdx>=0&&insertIdx>hpIdx)insertIdx=hpIdx;
+  const newItem={li,id,group:grp,item:'New item — click to edit',cat:'major',src:'Phase',sapTruth:false,status:'pass'};
+  state.checklists.splice(insertIdx,0,newItem);
+  reRenderLayer(li);
+}
+
+function addChecklistGroup(li) {
+  const grpName=prompt('Enter group name:');
+  if(!grpName)return;
+  if(grpName==='Hallucination Penalty'){alert('Cannot create a group named "Hallucination Penalty" — it is reserved.');return;}
+  clCounter[li]=(clCounter[li]||0)+1;
+  const id='cl_'+li+'_grp_'+clCounter[li]+'_'+Date.now();
+  // insert before HP group
+  const hpIdx=state.checklists.findIndex(c=>c.li===li&&c.group==='Hallucination Penalty');
+  const newItem={li,id,group:grpName,item:'First item in this group — click to edit',cat:'major',src:'Phase',sapTruth:false,status:'pass'};
+  if(hpIdx>=0) state.checklists.splice(hpIdx,0,newItem);
+  else state.checklists.push(newItem);
+  reRenderLayer(li);
+}
+
+// ═══════ LAYER ACTIONS ═══════
+function addLayer() {
+  const name=prompt('Layer name (e.g. "Custom Compliance Score"):');if(!name)return;
+  const abbr=prompt('Short abbreviation (e.g. "CCS"):');if(!abbr)return;
+  const li=state.layers.length;
+  state.layers.push({abbr,name,isSAP:false,weight:1,capEnabled:false,capThreshold:40,capValue:60});
+  clCounter.push(0);
+  renderLayer(li);
+  renderSidebarLinks();
+  renderWeightRows();
+  saveAndUpdate();
+}
+
+function removeLayer(li) {
+  if(!confirm('Remove layer "'+state.layers[li].name+'"? All its checklists will also be removed.'))return;
+  state.layers.splice(li,1);
+  state.checklists=state.checklists.filter(c=>c.li!==li);
+  // re-index
+  state.checklists.forEach(c=>{if(c.li>li)c.li--;});
+  clCounter.splice(li,1);
+  document.getElementById('layers-container').innerHTML='';
+  state.layers.forEach((_,i)=>renderLayer(i));
+  renderSidebarLinks();
+  renderWeightRows();
+  saveAndUpdate();
+}
+
+function reorderLayer(li, dir) {
+  const newIdx = li + dir;
+  if(newIdx < 0 || newIdx >= state.layers.length) return;
+  // swap layers
+  [state.layers[li], state.layers[newIdx]] = [state.layers[newIdx], state.layers[li]];
+  [clCounter[li], clCounter[newIdx]] = [clCounter[newIdx], clCounter[li]];
+  // re-index checklists
+  state.checklists.forEach(c => {
+    if(c.li === li) c.li = newIdx;
+    else if(c.li === newIdx) c.li = li;
+  });
+  document.getElementById('layers-container').innerHTML = '';
+  state.layers.forEach((_,i) => renderLayer(i));
+  renderSidebarLinks();
+  renderWeightRows();
+  saveAndUpdate();
+}
+
+function toggleLayer(li) {
+  const body=document.getElementById('lyr-body-'+li);
+  const btn=document.getElementById('lyr-collapse-btn-'+li);
+  if(!body)return;
+  body.classList.toggle('open');
+  if(btn)btn.classList.toggle('open');
+}
+
+function reRenderLayer(li) { renderLayer(li); updateAll(); saveState(); }
+
+// ═══════ WEIGHT ROWS ═══════
+function renderWeightRows() {
+  const c=document.getElementById('wt-rows-container');if(!c)return;
+  c.innerHTML='';
+  state.layers.forEach((l,li)=>{
+    const div=document.createElement('div');div.className='wt-row';
+    div.innerHTML=`
+      <span class="wt-id" style="color:${COLORS[li%8]}">${l.abbr}</span>
+      <span class="wt-name">${l.name}</span>
+      <div class="wt-bar-wrap"><input type="range" min="0" max="10" step="0.1" value="${l.weight}" style="accent-color:${COLORS[li%8]}" id="wtslider-${li}"></div>
+      <input type="number" class="num-in" value="${l.weight}" id="wtnum-${li}" min="0" step="0.1">
+      <span class="wt-ls" style="color:${COLORS[li%8]}" id="wtls-${li}">${Math.round(calcLayerScore(li))}%</span>`;
+    c.appendChild(div);
+    document.getElementById('wtslider-'+li).addEventListener('input',e=>{
+      state.layers[li].weight=parseFloat(e.target.value)||0;
+      document.getElementById('wtnum-'+li).value=state.layers[li].weight;
+      const lw=document.getElementById('lw-'+li);if(lw)lw.value=state.layers[li].weight;
+      saveAndUpdate();
+    });
+    document.getElementById('wtnum-'+li).addEventListener('input',e=>{
+      state.layers[li].weight=parseFloat(e.target.value)||0;
+      document.getElementById('wtslider-'+li).value=state.layers[li].weight;
+      const lw=document.getElementById('lw-'+li);if(lw)lw.value=state.layers[li].weight;
+      saveAndUpdate();
+    });
+  });
+}
+
+function syncWeightSlider(li) {
+  const sl=document.getElementById('wtslider-'+li);const nm=document.getElementById('wtnum-'+li);
+  if(sl)sl.value=state.layers[li].weight;
+  if(nm)nm.value=state.layers[li].weight;
+}
+
+// ═══════ SIDEBAR ═══════
+function renderSidebarLinks() {
+  const c=document.getElementById('sidebar-layer-links');if(!c)return;
+  c.innerHTML='';
+  state.layers.forEach((l,li)=>{
+    const a=document.createElement('a');a.className='nav-a';a.href='#layer-card-'+li;
+    a.innerHTML=`<span class="ndot" style="background:${COLORS[li%8]}"></span>${l.abbr} \u00B7 ${l.name.split(' ').slice(0,3).join(' ')}`;
+    c.appendChild(a);
+  });
+}
+
+// ═══════ NAV ═══════
+function setActiveNav(){
+  let cur='';
+  document.querySelectorAll('.section,.hero').forEach(s=>{if(s.getBoundingClientRect().top<=90)cur=s.id;});
+  document.querySelectorAll('.nav-a').forEach(a=>{a.classList.remove('active');if(a.getAttribute('href')==='#'+cur)a.classList.add('active');});
+}
+window.addEventListener('scroll',setActiveNav,{passive:true});
+
+function escH(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════ MASTER CHECKLIST LOADER ═══════
+const MASTER_CHECKLIST_FILE = 'SAP_FRS_Validation_Checklist.csv';
+const TECH_COMMON_PHASE4 = [
+  /SAP object naming/i,/Custom tables/i,/Tables & views/i,/Error handling/i,
+  /Contradiction Detection/i,/AI Hallucination Prevention/i,/S\/4 Migration/i
+];
+const WRICEF_MATCHERS = {
+  Workflow:[/workflow/i,/approval matrix/i,/agent determination/i,/my inbox/i],
+  Report:[/report/i,/ALV/i,/analytical/i],
+  Interface:[/interface/i,/IDoc/i,/EDI/i,/RFC/i,/Web Services?/i,/OData/i,/Flat File/i,/middleware/i,/Process Weaver/i,/acknowledgement/i,/tracking/i],
+  Conversion:[/conversion/i,/migration/i,/LSMW/i,/Data Migration/i,/cutover/i,/mock run/i,/source file/i],
+  Enhancement:[/enhancement/i,/BADI/i,/user exit/i,/customer exit/i,/implicit/i,/BTE/i,/determination/i,/validation/i,/Paymetric/i,/Free Sample/i],
+  Forms:[/\bforms?\b/i,/Adobe/i,/SmartForms/i,/SAPScript/i,/output/i,/label/i,/BOL/i,/invoice/i,/packing list/i,/commercial billing/i,/order confirmation/i,/UCC128/i],
+  Fiori:[/fiori/i,/UI5/i,/launchpad/i,/tile/i,/RAP/i]
+};
+const MODULE_MATCHERS = {
+  SD:[/SD specific/i,/\bSD\b/i,/EDI/i,/delivery/i,/ORDRSP/i,/DESADV/i,/SHPADV/i,/sales order/i,/billing/i,/invoice/i,/packing list/i,/BOL/i,/credit/i,/address validation/i,/commercial billing/i],
+  FI:[/FI \/ CO/i,/\bFI\b/i,/Financial/i,/FI Forms/i,/payment/i,/check print/i,/company code/i,/fiscal year/i,/invoice/i],
+  CO:[/FI \/ CO/i,/\bCO\b/i,/cost centre/i,/profit centre/i,/internal order/i,/WBS/i],
+  MM:[/MM \/ WM \/ EWM/i,/\bMM\b/i,/MM Forms/i,/procurement/i,/purchase/i,/goods receipt/i,/goods issue/i,/movement type/i,/inventory/i,/stock transfer/i,/MRP/i,/material/i],
+  QM:[/PP \/ QM/i,/\bQM\b/i,/inspection/i,/usage decision/i,/validation report/i],
+  HR:[/HR \/ HCM/i,/\bHR\b/i,/HCM/i,/SuccessFactors/i,/infotype/i,/payroll/i,/time management/i,/GDPR/i],
+  HCM:[/HR \/ HCM/i,/\bHR\b/i,/HCM/i,/SuccessFactors/i,/infotype/i,/payroll/i,/time management/i,/GDPR/i],
+  EWM:[/MM \/ WM \/ EWM/i,/\bEWM\b/i,/warehouse/i,/HU/i,/carrier/i,/label/i,/UCC128/i,/Process Weaver/i,/logistics/i,/transportation/i,/tracking/i],
+  PP:[/PP \/ QM/i,/\bPP\b/i,/production/i,/routing/i,/recipe/i,/MES/i,/planning report/i,/MRP/i],
+  WM:[/MM \/ WM \/ EWM/i,/\bWM\b/i,/warehouse/i,/movement type/i,/inventory/i,/stock transfer/i]
+};
+
+function parseCSVRows(text) {
+  const rows = [];
+  let row = [], cur = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    const next = text[i+1];
+    if(ch === '"'){
+      if(inQuotes && next === '"'){ cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if(ch === ',' && !inQuotes) {
+      row.push(cur); cur = '';
+    } else if((ch === '\n' || ch === '\r') && !inQuotes) {
+      if(ch === '\r' && next === '\n') i++;
+      row.push(cur); rows.push(row); row = []; cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+
+function cleanCSVText(s) {
+  return (s||'').trim().replace(/\uFFFD/g,'-').replace(/\s+/g,' ');
+}
+
+function parseMasterChecklist(csvText) {
+  return parseCSVRows(csvText).slice(1).map((r,idx)=>({
+    id:'mc_'+idx,
+    line:idx+2,
+    phase:cleanCSVText(r[0]),
+    score:cleanCSVText(r[1]),
+    category:cleanCSVText(r[2]) || 'Uncategorized',
+    item:cleanCSVText(r[3]),
+    severity:(cleanCSVText(r[4]).toLowerCase() || 'major').replace(/[^a-z]/g,'')
+  })).filter(r=>r.phase && r.item && ['critical','major','minor'].includes(r.severity));
+}
+
+function phaseNumber(phase) {
+  const m = (phase||'').match(/Phase\s+(\d+)/i);
+  return m ? parseInt(m[1],10) : null;
+}
+
+function layerIndexForMaster(row) {
+  const p = phaseNumber(row.phase);
+  if(p && p >= 1 && p <= 7) return p - 1;
+  if((row.phase||'').match(/S\/4HANA Modernization/i)) return 5;
+  return -1;
+}
+
+function isConstantMasterRow(row) {
+  const p = phaseNumber(row.phase);
+  return [1,2,3,6,7].includes(p) || (row.phase||'').match(/S\/4HANA Modernization/i);
+}
+
+function matchesWRICEF(row, wricef) {
+  if(wricef === 'All') return phaseNumber(row.phase) === 4;
+  const text = `${row.category} ${row.item}`;
+  const objectMatch = (WRICEF_MATCHERS[wricef]||[]).some(rx=>rx.test(text));
+  const commonMatch = TECH_COMMON_PHASE4.some(rx=>rx.test(row.category));
+  return objectMatch || commonMatch;
+}
+
+function matchesModule(row, moduleName) {
+  if(moduleName === 'All') return phaseNumber(row.phase) === 5;
+  const text = `${row.category} ${row.item}`;
+  return (MODULE_MATCHERS[moduleName]||[]).some(rx=>rx.test(text));
+}
+
+function shouldLoadMasterRow(row) {
+  const p = phaseNumber(row.phase);
+  if(isConstantMasterRow(row)) return true;
+  if(p === 4) return matchesWRICEF(row, state.context.wricef || 'All');
+  if(p === 5) return matchesModule(row, state.context.module || 'All');
+  return false;
+}
+
+async function loadMasterChecklist() {
+  const status = document.getElementById('context-status');
+  try {
+    const res = await fetch(encodeURI(MASTER_CHECKLIST_FILE), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const csv = await res.text();
+    masterChecklist = parseMasterChecklist(csv);
+    masterLoaded = masterChecklist.length > 0;
+    renderMasterRegistry();
+    applyContextFilter(false);
+  } catch(err) {
+    console.warn('Master checklist load failed', err);
+    if(status) status.innerHTML = '<strong>Master CSV not loaded.</strong> Keep this HTML and the CSV in the same served folder, then refresh.';
+    renderContextSummary();
+  }
+}
+
+function applyContextFromUI() {
+  if(!state.context) state.context = {module:'All',wricef:'All'};
+  const mod = document.getElementById('sap-module-filter');
+  const wr = document.getElementById('wricef-filter');
+  state.context.module = mod ? mod.value : 'All';
+  state.context.wricef = wr ? wr.value : 'All';
+  applyContextFilter(true);
+}
+
+function existingHPRows() {
+  const existing = state.checklists.filter(c=>c.group === 'Hallucination Penalty');
+  const rows = [];
+  state.layers.forEach((_,li)=>{
+    const hp = existing.filter(c=>c.li === li);
+    if(hp.length) rows.push(...hp);
+    else rows.push({li,id:'hp_'+li+'_default',group:'Hallucination Penalty',item:'No hallucination found for this layer',src:'HP',hpValue:0,cat:'major',sapTruth:false,status:'pass'});
+  });
+  return rows;
+}
+
+function masterRowToChecklist(row, previous) {
+  const li = layerIndexForMaster(row);
+  return {
+    li,
+    id:row.id,
+    masterId:row.id,
+    phase:row.phase,
+    group:row.category,
+    item:row.item,
+    cat:row.severity,
+    src:row.score ? `${row.phase} - ${row.score}` : row.phase,
+    sapTruth:li === 5,
+    status:previous ? previous.status : 'pass'
+  };
+}
+
+function applyContextFilter(shouldSave) {
+  if(!masterLoaded) {
+    renderContextSummary();
+    return;
+  }
+  const previousByMaster = new Map(state.checklists.filter(c=>c.masterId).map(c=>[c.masterId,c]));
+  const selectedRows = masterChecklist.filter(shouldLoadMasterRow).filter(r=>layerIndexForMaster(r) >= 0);
+  const selectedChecklists = selectedRows.map(row=>masterRowToChecklist(row, previousByMaster.get(row.id)));
+  state.checklists = selectedChecklists.concat(existingHPRows());
+  clCounter = state.layers.map((_,li)=>state.checklists.filter(c=>c.li===li).length);
+  const container = document.getElementById('layers-container');
+  if(container) container.innerHTML = '';
+  state.layers.forEach((_,li)=>renderLayer(li));
+  renderWeightRows();
+  updateAll();
+  renderContextSummary(selectedRows);
+  if(shouldSave) saveState();
+}
+
+function checklistSeverityCounts(items) {
+  return items.reduce((acc,item)=>{
+    const sev = item.severity || item.cat || 'major';
+    if(acc[sev] !== undefined) acc[sev]++;
+    acc.total++;
+    return acc;
+  }, {total:0,critical:0,major:0,minor:0});
+}
+
+function renderContextSummary(selectedRows) {
+  const cards = document.getElementById('context-summary-cards');
+  const phaseGrid = document.getElementById('phase-summary-grid');
+  const status = document.getElementById('context-status');
+  const md = document.getElementById('temp-md-preview');
+  const current = state.checklists.filter(c=>c.group !== 'Hallucination Penalty');
+  const rows = selectedRows || current.map(c=>({phase:c.phase||c.src, severity:c.cat, category:c.group, item:c.item}));
+  const counts = checklistSeverityCounts(rows);
+  const phase4 = rows.filter(r=>phaseNumber(r.phase) === 4).length;
+  const phase5 = rows.filter(r=>phaseNumber(r.phase) === 5).length;
+  const masterTotal = masterChecklist.length || rows.length;
+  const ctx = state.context || {module:'All',wricef:'All'};
+  if(status){
+    status.innerHTML = masterLoaded
+      ? `<strong>${counts.total} checklist items loaded</strong> from ${masterTotal} master rows. Module: <strong>${ctx.module}</strong> | WRICEF: <strong>${ctx.wricef}</strong>.`
+      : '<strong>Waiting for master checklist.</strong>';
+  }
+  if(cards){
+    cards.innerHTML = [
+      summaryCard('Selected Checks', counts.total, `${masterTotal} in master registry`, 'var(--c1)'),
+      summaryCard('Critical', counts.critical, 'highest impact checks', 'var(--red)'),
+      summaryCard('Major', counts.major, 'medium impact checks', 'var(--amber)'),
+      summaryCard('Minor', counts.minor, 'low impact checks', 'var(--green)'),
+      summaryCard('Phase 4 WRICEF', phase4, `${ctx.wricef} technical scope`, 'var(--c0)'),
+      summaryCard('Phase 5 Module', phase5, `${ctx.module} module scope`, 'var(--c0)')
+    ].join('');
+  }
+  if(phaseGrid){
+    phaseGrid.innerHTML = state.layers.map((layer,li)=>{
+      const layerRows = current.filter(c=>c.li===li);
+      const lc = checklistSeverityCounts(layerRows);
+      return `<div class="phase-card">
+        <div class="phase-card-title" style="color:${COLORS[li%8]}">${layer.abbr} - ${escH(layer.name)}</div>
+        <div class="phase-card-meta">${lc.total} selected checklist item${lc.total!==1?'s':''}</div>
+        ${severityLine(lc)}
+      </div>`;
+    }).join('');
+  }
+  if(md) md.textContent = buildTempMarkdown(current);
+}
+
+function summaryCard(label, value, sub, color) {
+  return `<div class="summary-card"><div class="summary-label">${label}</div><div class="summary-value" style="color:${color}">${value}</div><div class="summary-sub">${sub}</div></div>`;
+}
+
+function severityLine(c) {
+  return `<div class="sev-line">
+    <span class="sev-pill"><span class="pf-dot" style="background:var(--red)"></span>Critical ${c.critical}</span>
+    <span class="sev-pill"><span class="pf-dot" style="background:var(--amber)"></span>Major ${c.major}</span>
+    <span class="sev-pill"><span class="pf-dot" style="background:var(--green)"></span>Minor ${c.minor}</span>
+  </div>`;
+}
+
+function buildTempMarkdown(items) {
+  const ctx = state.context || {module:'All',wricef:'All'};
+  if(!items.length) return 'No checklist scope loaded yet.';
+  let out = `# Temporary FRS Validation Checklist\n\nSAP Module: ${ctx.module}\nWRICEF Type: ${ctx.wricef}\nSelected Checks: ${items.length}\n\n`;
+  state.layers.forEach((layer,li)=>{
+    const layerItems = items.filter(c=>c.li===li);
+    if(!layerItems.length) return;
+    out += `## ${layer.abbr} - ${layer.name} (${layerItems.length})\n`;
+    const groups = {};
+    layerItems.forEach(c=>{ if(!groups[c.group]) groups[c.group]=[]; groups[c.group].push(c); });
+    Object.keys(groups).forEach(grp=>{
+      out += `\n### ${grp}\n`;
+      groups[grp].forEach(c=>{ out += `- [${c.cat}] ${c.item}\n`; });
+    });
+    out += '\n';
+  });
+  return out;
+}
+
+function renderMasterRegistry() {
+  const panel = document.getElementById('master-registry-panel');
+  if(!panel) return;
+  if(!masterChecklist.length){
+    panel.innerHTML = '<div class="lp-sub">Master checklist not loaded yet.</div>';
+    return;
+  }
+  const counts = checklistSeverityCounts(masterChecklist);
+  const groups = {};
+  masterChecklist.forEach(row=>{ if(!groups[row.phase]) groups[row.phase]=[]; groups[row.phase].push(row); });
+  panel.innerHTML = `
+    <div class="summary-grid">
+      ${summaryCard('Master Total', counts.total, 'complete CSV checklist', 'var(--c1)')}
+      ${summaryCard('Critical', counts.critical, 'master critical checks', 'var(--red)')}
+      ${summaryCard('Major', counts.major, 'master major checks', 'var(--amber)')}
+      ${summaryCard('Minor', counts.minor, 'master minor checks', 'var(--green)')}
+    </div>
+    ${Object.keys(groups).map((phase,idx)=>{
+      const rows = groups[phase];
+      const pc = checklistSeverityCounts(rows);
+      return `<details class="registry-phase" ${idx<2?'open':''}>
+        <summary>${escH(phase)} - ${pc.total} checks (${pc.critical} critical, ${pc.major} major, ${pc.minor} minor)</summary>
+        <div class="registry-list">
+          ${rows.map(row=>`<div class="registry-row">
+            <div class="registry-cat">${escH(row.category)}</div>
+            <div class="registry-sev ${row.severity}">${row.severity}</div>
+            <div>${escH(row.item)}</div>
+          </div>`).join('')}
+        </div>
+      </details>`;
+    }).join('')}`;
+}
+
+// ═══════ INIT ═══════
+function initRender() {
+  document.getElementById('layers-container').innerHTML='';
+  // sync cat IV inputs
+  document.getElementById('cat-critical-iv').value=state.catIV.critical;
+  document.getElementById('cat-major-iv').value=state.catIV.major;
+  document.getElementById('cat-minor-iv').value=state.catIV.minor;
+  if(!state.catSV) state.catSV={pass:1,partial:0.5,fail:0};
+  const svp=document.getElementById('sv-pass'); if(svp) svp.value=state.catSV.pass;
+  const svpt=document.getElementById('sv-partial'); if(svpt) svpt.value=state.catSV.partial;
+  const svf=document.getElementById('sv-fail'); if(svf) svf.value=state.catSV.fail;
+  if(!state.context) state.context={module:'All',wricef:'All'};
+  const mod=document.getElementById('sap-module-filter'); if(mod) mod.value=state.context.module||'All';
+  const wr=document.getElementById('wricef-filter'); if(wr) wr.value=state.context.wricef||'All';
+  state.layers.forEach((_,li)=>renderLayer(li));
+  renderSidebarLinks();
+  renderWeightRows();
+  setActiveNav();
+  updateAll();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const loaded=loadState();
+  if(!loaded) initDefaults();
+  initRender();
+  loadMasterChecklist();
+  // auto-save every 30s
+  setInterval(saveState,30000);
+});
+</script>
+</body>
+</html>
