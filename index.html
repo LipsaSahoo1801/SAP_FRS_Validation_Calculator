@@ -1462,7 +1462,7 @@ function renderMasterRegistry() {
     ${Object.keys(groups).map((phase,idx)=>{
       const rows = groups[phase];
       const pc = checklistSeverityCounts(rows);
-      return `<details class="registry-phase" ${idx<2?'open':''}>
+      return `<details class="registry-phase">
         <summary>${escH(phase)} - ${pc.total} checks (${pc.critical} critical, ${pc.major} major, ${pc.minor} minor)</summary>
         <div class="registry-list">
           ${rows.map(row=>`<div class="registry-row">
