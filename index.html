@@ -475,6 +475,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
     <span>&#128190; All changes auto-saved to browser localStorage. Use Export for backup or sharing.</span>
     <button class="sb-btn save" onclick="exportJSON()">&#8595; Export JSON</button>
     <button class="sb-btn load" onclick="exportPDF()">&#128462; Export PDF</button>
+    <button class="sb-btn load" onclick="exportDOCX()">&#128196; Export DOCX</button>
     <!-- <button class="sb-btn load" onclick="document.getElementById('import-file').click()">&#8593; Import JSON</button> -->
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
     <button class="sb-btn reset" onclick="confirmReset()">&#8635; Reset</button>
@@ -538,7 +539,7 @@ const DEFAULT_LAYERS = [
   {abbr:'MCCS',name:'Module Context Compliance Score',    isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
   {abbr:'SRS', name:'SAP Reliability Score',              isSAP:true,  weight:1, capEnabled:true,  capThreshold:40, capValue:60, hpPenalty:0},
   {abbr:'TSCS',name:'Test Case SignOff Compliance Score', isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
-  {abbr:'CRS', name:'Contextual Relevance Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
+  // {abbr:'CRS', name:'Contextual Relevance Score',         isSAP:false, weight:1, capEnabled:false, capThreshold:40, capValue:60, hpPenalty:0},
 ];
 
 // ═══════ STATE ═══════
@@ -550,6 +551,10 @@ let masterLoaded = false;
 
 // ═══════ LOCALSTORAGE ═══════
 function saveState() {
+  const numOr = (value, fallback) => {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
   // collect live inputs before saving
   state.layers.forEach((l,li) => {
     const wEl = document.getElementById('lw-'+li);
@@ -566,9 +571,9 @@ function saveState() {
   const civEl = document.getElementById('cat-critical-iv');
   const mivEl = document.getElementById('cat-major-iv');
   const minivEl= document.getElementById('cat-minor-iv');
-  if(civEl) state.catIV.critical = parseFloat(civEl.value)||10;
-  if(mivEl) state.catIV.major    = parseFloat(mivEl.value)||5;
-  if(minivEl) state.catIV.minor  = parseFloat(minivEl.value)||2;
+  if(civEl) state.catIV.critical = numOr(civEl.value, 10);
+  if(mivEl) state.catIV.major    = numOr(mivEl.value, 5);
+  if(minivEl) state.catIV.minor  = numOr(minivEl.value, 2);
   if(!state.catSV) state.catSV={pass:1,partial:0.5,fail:0};
   const svPassEl=document.getElementById('sv-pass'); if(svPassEl) state.catSV.pass=parseFloat(svPassEl.value)||0;
   const svPartEl=document.getElementById('sv-partial'); if(svPartEl) state.catSV.partial=parseFloat(svPartEl.value)||0;
@@ -597,12 +602,21 @@ function loadState() {
   return false;
 }
 
-function saveAndUpdate() { updateAll(); saveState(); }
+function saveAndUpdate() { saveState(); updateAll(); }
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 500);
+}
 
 function exportJSON() {
   saveState();
   const blob = new Blob([localStorage.getItem(LS_KEY)||'{}'],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='frs_r_state.json'; a.click();
+  downloadBlob(blob, 'frs_r_state.json');
 }
 
 function exportPDF() {
@@ -618,6 +632,13 @@ function exportPDF() {
   reportWindow.document.close();
   reportWindow.focus();
   setTimeout(()=>reportWindow.print(), 300);
+}
+
+function exportDOCX() {
+  saveState();
+  updateAll();
+  const blob = buildDOCXReportBlob();
+  downloadBlob(blob, 'frs_r_sme_scoring_report.docx');
 }
 
 function buildPDFReportHTML() {
@@ -730,6 +751,214 @@ function buildPDFReportHTML() {
 </html>`;
 }
 
+function buildDOCXReportBlob() {
+  const ctx = state.context || {module:'All',wricef:'All'};
+  const overall = calcOverall();
+  const selected = state.checklists.filter(c=>c.group !== 'Hallucination Penalty');
+  const hpRows = state.checklists.filter(c=>c.group === 'Hallucination Penalty');
+  const counts = checklistSeverityCounts(selected);
+  const generatedAt = new Date().toLocaleString();
+  const score = overall ? overall.frs.toFixed(1) + '%' : 'N/A';
+  const totalWeight = overall ? overall.totalW : state.layers.reduce((s,l)=>s+(parseFloat(l.weight)||0),0);
+  const layerRows = state.layers.map((layer,li)=>{
+    const rows = selected.filter(c=>c.li===li);
+    const lc = checklistSeverityCounts(rows);
+    const hpTotal = hpRows.filter(c=>c.li===li).reduce((s,c)=>s+(parseFloat(c.hpValue)||0),0);
+    return [
+      layer.abbr,
+      layer.name,
+      parseFloat(layer.weight||0),
+      calcLayerScore(li).toFixed(1) + '%',
+      rows.length,
+      lc.critical,
+      lc.major,
+      lc.minor,
+      hpTotal.toFixed(1)
+    ];
+  });
+  const checklistRows = selected.map((cl,idx)=>{
+    const layer = state.layers[cl.li] || {};
+    return [
+      idx+1,
+      layer.abbr || '',
+      cl.group,
+      cl.cat,
+      cl.status || 'pass',
+      calcCheckScore(cl).toFixed(1) + ' / ' + calcCheckPossible(cl).toFixed(1),
+      cl.item
+    ];
+  });
+  const hpDetailRows = hpRows.length ? hpRows.map((cl,idx)=>{
+    const layer = state.layers[cl.li] || {};
+    return [
+      idx+1,
+      layer.abbr || '',
+      cl.item || 'Hallucination penalty',
+      (parseFloat(cl.hpValue)||0).toFixed(1),
+      cl.src || 'HP'
+    ];
+  }) : [['', '', 'No hallucination penalty rows recorded.', '', '']];
+
+  const body = [
+    docxParagraph('FRS-R SME Scoring Report', {bold:true, size:32, color:'0077AA'}),
+    docxParagraph('Generated: ' + generatedAt, {color:'667085'}),
+    docxParagraph('Summary', {bold:true, size:24}),
+    docxTable([
+      ['Final FRS-R', 'SAP Module', 'WRICEF Type', 'Total Weight'],
+      [score, ctx.module, ctx.wricef, totalWeight],
+      ['Selected Checks', 'Critical', 'Major', 'Minor'],
+      [counts.total, counts.critical, counts.major, counts.minor]
+    ]),
+    docxParagraph('SME Values', {bold:true, size:24}),
+    docxTable([
+      ['Critical IV', 'Major IV', 'Minor IV', 'Pass Multiplier', 'Partial Multiplier', 'Fail Multiplier'],
+      [state.catIV.critical, state.catIV.major, state.catIV.minor, getSV('pass'), getSV('partial'), getSV('fail')]
+    ]),
+    docxParagraph('Layer Scores And Weights', {bold:true, size:24}),
+    docxTable([['Layer', 'Name', 'Weight', 'Score', 'Checks', 'Critical', 'Major', 'Minor', 'HP Deduction']].concat(layerRows)),
+    docxParagraph('Hallucination Penalties', {bold:true, size:24}),
+    docxTable([['#', 'Layer', 'Penalty Item', 'Penalty Points', 'Source']].concat(hpDetailRows)),
+    docxParagraph('Selected Checklist Statuses', {bold:true, size:24}),
+    docxTable([['#', 'Layer', 'Group', 'Severity', 'Status', 'Score', 'Checklist Item']].concat(checklistRows)),
+    docxParagraph('This report is generated from the SME browser-local state in the FRS-R HTML prototype.', {color:'667085', size:18})
+  ].join('');
+
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    ${body}
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1080" w:right="900" w:bottom="1080" w:left="900" w:header="720" w:footer="720" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+
+  return makeZipBlob({
+    '[Content_Types].xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`,
+    '_rels/.rels': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`,
+    'word/document.xml': documentXml
+  }, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+}
+
+function docxParagraph(text, opts={}) {
+  const size = opts.size || 20;
+  const color = opts.color || '1A1D2E';
+  const bold = opts.bold ? '<w:b/>' : '';
+  return `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr><w:r><w:rPr>${bold}<w:color w:val="${color}"/><w:sz w:val="${size}"/></w:rPr><w:t>${escX(text)}</w:t></w:r></w:p>`;
+}
+
+function docxTable(rows) {
+  const borders = '<w:tblBorders><w:top w:val="single" w:sz="4" w:color="DDE1EC"/><w:left w:val="single" w:sz="4" w:color="DDE1EC"/><w:bottom w:val="single" w:sz="4" w:color="DDE1EC"/><w:right w:val="single" w:sz="4" w:color="DDE1EC"/><w:insideH w:val="single" w:sz="4" w:color="DDE1EC"/><w:insideV w:val="single" w:sz="4" w:color="DDE1EC"/></w:tblBorders>';
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>${borders}</w:tblPr>${rows.map((row,ri)=>`<w:tr>${row.map(cell=>docxCell(cell, ri===0)).join('')}</w:tr>`).join('')}</w:tbl>`;
+}
+
+function docxCell(value, isHeader) {
+  const shading = isHeader ? '<w:shd w:fill="F0F2F7"/>' : '';
+  const bold = isHeader ? '<w:b/>' : '';
+  return `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/>${shading}</w:tcPr><w:p><w:r><w:rPr>${bold}<w:sz w:val="18"/></w:rPr><w:t>${escX(value)}</w:t></w:r></w:p></w:tc>`;
+}
+
+function makeZipBlob(files, type) {
+  const encoder = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  Object.keys(files).forEach(name=>{
+    const nameBytes = encoder.encode(name);
+    const data = encoder.encode(files[name]);
+    const crc = crc32(data);
+    const local = zipLocalHeader(nameBytes, data.length, crc);
+    chunks.push(local, nameBytes, data);
+    central.push({nameBytes, size:data.length, crc, offset});
+    offset += local.length + nameBytes.length + data.length;
+  });
+  let centralSize = 0;
+  central.forEach(entry=>{
+    const header = zipCentralHeader(entry.nameBytes, entry.size, entry.crc, entry.offset);
+    chunks.push(header, entry.nameBytes);
+    centralSize += header.length + entry.nameBytes.length;
+  });
+  chunks.push(zipEndRecord(central.length, centralSize, offset));
+  return new Blob(chunks, {type});
+}
+
+function zipLocalHeader(nameBytes, size, crc) {
+  const view = new DataView(new ArrayBuffer(30));
+  view.setUint32(0, 0x04034b50, true);
+  view.setUint16(4, 20, true);
+  view.setUint16(6, 0x0800, true);
+  view.setUint16(8, 0, true);
+  view.setUint16(10, 0, true);
+  view.setUint16(12, 0, true);
+  view.setUint32(14, crc, true);
+  view.setUint32(18, size, true);
+  view.setUint32(22, size, true);
+  view.setUint16(26, nameBytes.length, true);
+  view.setUint16(28, 0, true);
+  return new Uint8Array(view.buffer);
+}
+
+function zipCentralHeader(nameBytes, size, crc, offset) {
+  const view = new DataView(new ArrayBuffer(46));
+  view.setUint32(0, 0x02014b50, true);
+  view.setUint16(4, 20, true);
+  view.setUint16(6, 20, true);
+  view.setUint16(8, 0x0800, true);
+  view.setUint16(10, 0, true);
+  view.setUint16(12, 0, true);
+  view.setUint16(14, 0, true);
+  view.setUint32(16, crc, true);
+  view.setUint32(20, size, true);
+  view.setUint32(24, size, true);
+  view.setUint16(28, nameBytes.length, true);
+  view.setUint16(30, 0, true);
+  view.setUint16(32, 0, true);
+  view.setUint16(34, 0, true);
+  view.setUint16(36, 0, true);
+  view.setUint32(38, 0, true);
+  view.setUint32(42, offset, true);
+  return new Uint8Array(view.buffer);
+}
+
+function zipEndRecord(count, centralSize, centralOffset) {
+  const view = new DataView(new ArrayBuffer(22));
+  view.setUint32(0, 0x06054b50, true);
+  view.setUint16(4, 0, true);
+  view.setUint16(6, 0, true);
+  view.setUint16(8, count, true);
+  view.setUint16(10, count, true);
+  view.setUint32(12, centralSize, true);
+  view.setUint32(16, centralOffset, true);
+  view.setUint16(20, 0, true);
+  return new Uint8Array(view.buffer);
+}
+
+function crc32(data) {
+  if(!crc32.table) {
+    crc32.table = Array.from({length:256},(_,n)=>{
+      let c = n;
+      for(let k=0;k<8;k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      return c >>> 0;
+    });
+  }
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<data.length;i++) c = crc32.table[(c ^ data[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function escX(value) {
+  return String(value ?? '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function importJSON(e) {
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
@@ -765,6 +994,14 @@ function initDefaults() {
 function getIV(cat) { return state.catIV[cat]||0; }
 function getSV(k){ return parseFloat((state.catSV||{})[k])||0; }
 function getStatusVal(status) { return getSV(status); }
+function catOptionText(cat) {
+  const labels = {critical:'\uD83D\uDD34 Critical', major:'\uD83D\uDFE1 Major', minor:'\uD83D\uDFE2 Minor'};
+  return `${labels[cat] || cat} (IV=${getIV(cat)})`;
+}
+function statusOptionText(status) {
+  const labels = {pass:'\u2713 Pass', partial:'\u2248 Partial', fail:'\u2717 Fail'};
+  return `${labels[status] || status} (${getSV(status)})`;
+}
 
 function calcCheckScore(cl) { return getIV(cl.cat) * getStatusVal(cl.status); }
 function calcCheckPossible(cl) { return getIV(cl.cat); }
@@ -800,6 +1037,7 @@ function calcOverall() {
 // ═══════ RENDER ALL ═══════
 function updateAll() {
   updateCatExamples();
+  updateChecklistSelectLabels();
   updateOverall();
   updateWeightRowScores();
   state.layers.forEach((_,li)=>updateLayerHeader(li));
@@ -815,6 +1053,25 @@ function updateCatExamples() {
   set('min-pass-eg', (miniv*sv_pass).toFixed(1));  set('min-partial-eg', (miniv*sv_part).toFixed(1));  set('min-fail-eg', (miniv*sv_fail).toFixed(1));
   // update SV display spans
   set('sv-pass-disp',sv_pass); set('sv-partial-disp',sv_part); set('sv-fail-disp',sv_fail);
+}
+
+function updateChecklistSelectLabels() {
+  const catLabels = {
+    critical: catOptionText('critical'),
+    major: catOptionText('major'),
+    minor: catOptionText('minor')
+  };
+  document.querySelectorAll('.cl-sel').forEach(sel=>{
+    Array.from(sel.options).forEach(opt=>{ if(catLabels[opt.value]) opt.textContent = catLabels[opt.value]; });
+  });
+  const statusLabels = {
+    pass: statusOptionText('pass'),
+    partial: statusOptionText('partial'),
+    fail: statusOptionText('fail')
+  };
+  document.querySelectorAll('.cl-status-sel').forEach(sel=>{
+    Array.from(sel.options).forEach(opt=>{ if(statusLabels[opt.value]) opt.textContent = statusLabels[opt.value]; });
+  });
 }
 
 function updateOverall() {
@@ -912,6 +1169,8 @@ function updateLayerHeader(li) {
       contrib.style.color=cl.status==='pass'?'var(--green)':cl.status==='partial'?'var(--amber)':'var(--red)';
     }
   });
+  const note=document.getElementById('layer-note-'+li);
+  if(note) note.innerHTML=`Total: ${cls.length} checklist items &middot; IV=Importance Value set globally above &middot; Status: Pass=${getSV('pass')}, Partial=${getSV('partial')}, Fail=${getSV('fail')}${layer.isSAP?' &middot; SAP Live validation layer':''}`;
 }
 
 // ═══════ RENDER LAYER ═══════
@@ -983,7 +1242,7 @@ function renderLayer(li) {
         <button class="add-cl-btn" onclick="addChecklist(${li})">&#65291; Add checklist item</button>
         <button class="add-cl-btn" onclick="addChecklistGroup(${li})">&#65291; Add new group</button>
       </div>
-      <div class="layer-note">Total: ${cls.length} checklist items &middot; IV=Importance Value set globally above &middot; Status: Pass=1, Partial=0.5, Fail=0${layer.isSAP?' &middot; SAP Live validation layer':''}</div>
+      <div class="layer-note" id="layer-note-${li}">Total: ${cls.length} checklist items &middot; IV=Importance Value set globally above &middot; Status: Pass=${getSV('pass')}, Partial=${getSV('partial')}, Fail=${getSV('fail')}${layer.isSAP?' &middot; SAP Live validation layer':''}</div>
     </div>`;
   if(existing)existing.replaceWith(div);
   else container.appendChild(div);
@@ -1069,17 +1328,17 @@ function renderChecklistsHTML(li) {
             <div class="cl-ctrl-row">
               <span>Category:</span>
               <select class="cl-sel" id="cl-cat-${cl.id}" onchange="setCLCat('${cl.id}',this.value)" style="border-left:3px solid ${catColor}">
-                <option value="critical" ${cl.cat==='critical'?'selected':''}>\uD83D\uDD34 Critical (IV=${getIV('critical')})</option>
-                <option value="major"    ${cl.cat==='major'   ?'selected':''}>\uD83D\uDFE1 Major (IV=${getIV('major')})</option>
-                <option value="minor"    ${cl.cat==='minor'   ?'selected':''}>\uD83D\uDFE2 Minor (IV=${getIV('minor')})</option>
+                <option value="critical" ${cl.cat==='critical'?'selected':''}>${catOptionText('critical')}</option>
+                <option value="major"    ${cl.cat==='major'   ?'selected':''}>${catOptionText('major')}</option>
+                <option value="minor"    ${cl.cat==='minor'   ?'selected':''}>${catOptionText('minor')}</option>
               </select>
             </div>
             <div class="cl-ctrl-row">
               <span>Status:</span>
               <select class="cl-status-sel" id="cl-status-${cl.id}" onchange="setCLStatus('${cl.id}',this.value)" style="border-left:3px solid ${statusColor}">
-                <option value="pass"    ${cl.status==='pass'   ?'selected':''}>&#10003; Pass (${getSV('pass')})</option>
-                <option value="partial" ${cl.status==='partial'?'selected':''}>&#8776; Partial (${getSV('partial')})</option>
-                <option value="fail"    ${cl.status==='fail'   ?'selected':''}>&#10007; Fail (${getSV('fail')})</option>
+                <option value="pass"    ${cl.status==='pass'   ?'selected':''}>${statusOptionText('pass')}</option>
+                <option value="partial" ${cl.status==='partial'?'selected':''}>${statusOptionText('partial')}</option>
+                <option value="fail"    ${cl.status==='fail'   ?'selected':''}>${statusOptionText('fail')}</option>
               </select>
             </div>
             <span class="cl-score-tag" id="cl-score-tag-${cl.id}" style="background:#fce8e8;color:var(--red)">${cs.toFixed(1)}/${poss.toFixed(1)}</span>
@@ -1102,12 +1361,7 @@ function setCLCat(id,v){
   const catColor=v==='critical'?'var(--red)':v==='minor'?'var(--green)':'var(--amber)';
   const selEl=document.getElementById('cl-cat-'+id);
   if(selEl)selEl.style.borderLeft='3px solid '+catColor;
-  // update options text with current IVs
-  if(selEl){
-    selEl.options[0].text='\uD83D\uDD34 Critical (IV='+getIV('critical')+')';
-    selEl.options[1].text='\uD83D\uDFE1 Major (IV='+getIV('major')+')';
-    selEl.options[2].text='\uD83D\uDFE2 Minor (IV='+getIV('minor')+')';
-  }
+  updateChecklistSelectLabels();
   updateLayerHeader(cl.li);saveAndUpdate();
 }
 function setCLStatus(id,v){
